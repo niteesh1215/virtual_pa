@@ -27,64 +27,73 @@ class CustomTextField extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Consumer<ValidationController>(
-            builder: (context, validationController, _) {
-          bool showErrorBorder = validationController.isValid == null ||
-                  validationController.isValid!
-              ? false
-              : true;
-          return TextFormField(
-            onChanged: (String text) {
-              validationController.validate(text);
-              if (onChange == null) onChange!(text);
-            },
-            onFieldSubmitted: onSubmitted,
-            validator: (String? text) {
-              if (text == null || !validationController.validate(text)) {
-                return validationController.invalidMessage;
-              }
-              return null;
-            },
-            style: Theme.of(context)
-                .textTheme
-                .bodyText1!
-                .copyWith(color: Colors.white),
-            keyboardType: inputType,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
-              contentPadding: const EdgeInsets.all(20),
-              hintText: hintText,
-              hintStyle: Theme.of(context).textTheme.bodyText1,
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(
+          builder: (context, validationController, _) {
+            bool showErrorBorder = validationController.isValid == null ||
+                    validationController.isValid!
+                ? false
+                : true;
+            return TextFormField(
+              onChanged: (String text) {
+                validationController.validate(text);
+                if (onChange == null) onChange!(text);
+              },
+              onFieldSubmitted: onSubmitted,
+              validator: (String? text) {
+                if (text == null || !validationController.validate(text)) {
+                  return validationController.invalidMessage;
+                }
+                return null;
+              },
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyText1!
+                  .copyWith(color: Colors.white),
+              keyboardType: inputType,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.all(20),
+                hintText: hintText,
+                hintStyle: Theme.of(context).textTheme.bodyText1,
+                enabledBorder: border(
+                  context,
                   color: showErrorBorder
                       ? Theme.of(context).errorColor
                       : Colors.grey,
-                  width: 1,
                 ),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(
+                focusedBorder: border(
+                  context,
                   color: showErrorBorder
                       ? Theme.of(context).errorColor
                       : validationController.isValid == null
                           ? Colors.white
                           : context.read<AppTheme>().successColor,
-                  width: 1,
                 ),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderSide: BorderSide(
-                  color: Theme.of(context).errorColor,
-                  width: 1,
+                errorBorder: border(
+                  context,
+                  color: showErrorBorder
+                      ? Theme.of(context).errorColor
+                      : context.read<AppTheme>().successColor,
                 ),
-                borderRadius: BorderRadius.circular(18),
+                focusedErrorBorder: border(
+                  context,
+                  color: showErrorBorder
+                      ? Theme.of(context).errorColor
+                      : context.read<AppTheme>().successColor,
+                ),
               ),
-            ),
-          );
-        }),
+            );
+          },
+        ),
       ),
     );
   }
+
+  OutlineInputBorder border(BuildContext context, {required Color color}) =>
+      OutlineInputBorder(
+        borderSide: BorderSide(
+          color: color,
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(18),
+      );
 }

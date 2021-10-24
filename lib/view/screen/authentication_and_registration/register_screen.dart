@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,7 @@ import 'package:virtual_pa/utilities/custom_navigator.dart';
 import 'package:virtual_pa/view/component/custom_password_field.dart';
 import 'package:virtual_pa/view/component/custom_text_button.dart';
 import 'package:virtual_pa/view/component/custom_text_field.dart';
+import 'package:virtual_pa/view/screen/home/home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -23,7 +25,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _register() {
     if (_formKey.currentState!.validate()) {
-      print('form is valid');
+      Navigator.push(
+        context,
+        CupertinoPageRoute(
+          builder: (context) => const HomeScreen(),
+        ),
+      );
     }
   }
 

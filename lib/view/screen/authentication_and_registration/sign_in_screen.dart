@@ -10,6 +10,7 @@ import 'package:virtual_pa/view/component/custom_password_field.dart';
 import 'package:virtual_pa/view/component/custom_text_button.dart';
 import 'package:virtual_pa/view/component/custom_text_field.dart';
 import 'package:virtual_pa/view/screen/authentication_and_registration/register_screen.dart';
+import 'package:virtual_pa/view/screen/home/home_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({Key? key}) : super(key: key);
@@ -24,7 +25,12 @@ class _SignInScreenState extends State<SignInScreen> {
   late User _user;
   void _signIn() {
     if (_formKey.currentState!.validate()) {
-      print('Form valid');
+      Navigator.push(
+        context,
+        CupertinoPageRoute(
+          builder: (context) => const HomeScreen(),
+        ),
+      );
     }
   }
 

@@ -23,7 +23,7 @@ class VirtualPA extends StatelessWidget {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'VirtualPA',
-            darkTheme: appTheme.getDarkThem(context),
+            darkTheme: appTheme.getDarkTheme(context),
             themeMode: appTheme.themeMode,
             home: child,
           );

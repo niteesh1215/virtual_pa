@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:virtual_pa/controller/textfield_validation_controller.dart';
+import 'package:virtual_pa/model/app_theme.dart';
 
 class CustomPasswordField extends StatelessWidget {
   CustomPasswordField(
@@ -12,7 +13,7 @@ class CustomPasswordField extends StatelessWidget {
       this.onSubmitted,
       this.onChange})
       : _validationController = validationController ??
-            LengthValidationController(minimumLength: 0),
+            LengthValidationController(minimumLength: 6),
         super(key: key);
   final String? hintText;
 
@@ -69,35 +70,41 @@ class CustomPasswordField extends StatelessWidget {
               contentPadding: const EdgeInsets.all(20),
               hintText: hintText ?? 'Password',
               hintStyle: Theme.of(context).textTheme.bodyText1,
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(
+              enabledBorder: border(
+                context,
+                color: showErrorBorder
+                    ? Theme.of(context).errorColor
+                    : Colors.grey,
+              ),
+              focusedBorder: border(
+                context,
+                color: showErrorBorder
+                    ? Theme.of(context).errorColor
+                    : validationController.isValid == null
+                        ? Colors.white
+                        : context.read<AppTheme>().successColor,
+              ),
+              errorBorder: border(context,
                   color: showErrorBorder
                       ? Theme.of(context).errorColor
-                      : Colors.grey,
-                  width: 1,
-                ),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(
+                      : context.read<AppTheme>().successColor),
+              focusedErrorBorder: border(context,
                   color: showErrorBorder
                       ? Theme.of(context).errorColor
-                      : Colors.white,
-                  width: 1,
-                ),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderSide: BorderSide(
-                  color: Theme.of(context).errorColor,
-                  width: 1,
-                ),
-                borderRadius: BorderRadius.circular(18),
-              ),
+                      : context.read<AppTheme>().successColor),
             ),
           );
         }),
       ),
     );
   }
+
+  OutlineInputBorder border(BuildContext context, {required Color color}) =>
+      OutlineInputBorder(
+        borderSide: BorderSide(
+          color: color,
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(18),
+      );
 }

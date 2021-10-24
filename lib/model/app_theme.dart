@@ -6,41 +6,41 @@ class AppTheme with ChangeNotifier {
   final Color successColor = Colors.greenAccent;
   ThemeMode _themeMode = ThemeMode.dark;
 
-  ThemeData getDarkThem(context) {
+  ThemeData getDarkTheme(context) {
     return ThemeData(
-      scaffoldBackgroundColor: _backgroundColor,
-      visualDensity: VisualDensity.adaptivePlatformDensity,
-      colorScheme: const ColorScheme.dark(),
-      errorColor: Colors.red,
-      textTheme: GoogleFonts.poppinsTextTheme(
-        Theme.of(context).textTheme.copyWith(
-              headline2: const TextStyle(
-                color: Colors.white,
-                fontSize: 34,
-                fontWeight: FontWeight.bold,
+        scaffoldBackgroundColor: _backgroundColor,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        colorScheme: const ColorScheme.dark(),
+        errorColor: Colors.red,
+        textTheme: GoogleFonts.poppinsTextTheme(
+          Theme.of(context).textTheme.copyWith(
+                headline2: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 34,
+                  fontWeight: FontWeight.bold,
+                ),
+                headline4: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white),
+                bodyText1: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 15,
+                ),
+                bodyText2: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+                button: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              headline4: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white),
-              bodyText1: const TextStyle(
-                color: Colors.grey,
-                fontSize: 15,
-              ),
-              bodyText2: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
-              button: const TextStyle(
-                color: Colors.black87,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-      ),
-      appBarTheme: AppBarTheme(backgroundColor: _backgroundColor),
-
-    );
+        ),
+        appBarTheme: AppBarTheme(backgroundColor: _backgroundColor),
+        floatingActionButtonTheme:
+            FloatingActionButtonThemeData(backgroundColor: Colors.white));
   }
 
   set themeMode(ThemeMode themeMode) {
