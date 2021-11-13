@@ -6,9 +6,9 @@ import 'package:virtual_pa/constants.dart';
 import 'package:virtual_pa/controller/textfield_validation_controller.dart';
 import 'package:virtual_pa/model/user.dart';
 import 'package:virtual_pa/utilities/custom_navigator.dart';
-import 'package:virtual_pa/view/component/custom_password_field.dart';
-import 'package:virtual_pa/view/component/custom_text_button.dart';
-import 'package:virtual_pa/view/component/custom_text_field.dart';
+import 'package:virtual_pa/view/component/input_field/custom_password_field.dart';
+import 'package:virtual_pa/view/component/buttons/custom_text_button.dart';
+import 'package:virtual_pa/view/component/input_field/custom_text_field.dart';
 import 'package:virtual_pa/view/screen/home/home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {

@@ -32,7 +32,7 @@ class LengthValidationController extends ValidationController {
       : assert(minimumLength >= 0, 'minimum length cannot be negative'),
         super(
             regExp: RegExp(
-              r"^[a-zA-Z]{" + minimumLength.toString() + ",}\$",
+              r"^.{" + minimumLength.toString() + ",}\$"
             ),
             invalidMessage: invalidMessage);
 }

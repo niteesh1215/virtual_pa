@@ -1,5 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.virtual_pa">
+    <!-- COPY THIS SECTION IN CASE MOVING FILES TO NEW PROJECT, LOOK FOR `COPY END` COMMENT FOR ENDING OF THE SECTION-->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Permissions options for the `contacts` group -->
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
+    <uses-permission android:name="android.permission.WRITE_CONTACTS"/>
+    <uses-permission android:name="android.permission.GET_ACCOUNTS"/>
+    <!-- COPY END -->
+
    <application
         android:label="virtual_pa"
         android:icon="@mipmap/ic_launcher">
