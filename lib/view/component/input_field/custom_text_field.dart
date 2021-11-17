@@ -32,10 +32,12 @@ class CustomTextField extends StatelessWidget {
                     validationController.isValid!
                 ? false
                 : true;
+            print(showErrorBorder);
             return TextFormField(
               onChanged: (String text) {
+                print(text);
                 validationController.validate(text);
-                if (onChange == null) onChange!(text);
+                if (onChange != null) onChange!(text);
               },
               onFieldSubmitted: onSubmitted,
               validator: (String? text) {
@@ -65,7 +67,7 @@ class CustomTextField extends StatelessWidget {
                   color: showErrorBorder
                       ? Theme.of(context).errorColor
                       : validationController.isValid == null
-                          ? Colors.white
+                          ? Colors.grey
                           : context.read<AppTheme>().successColor,
                 ),
                 errorBorder: border(

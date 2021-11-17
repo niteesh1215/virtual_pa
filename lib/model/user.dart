@@ -1,10 +1,18 @@
 import 'package:flutter/cupertino.dart';
 
 class User with ChangeNotifier {
+  String? _userId;
   String? _token;
   String? _phoneNo;
   String? _name;
   String? _password;
+
+  String? get userId => _userId;
+
+  set userId(String? userId) {
+    _userId = userId;
+    notifyListeners();
+  }
 
   String? get token => _token;
 

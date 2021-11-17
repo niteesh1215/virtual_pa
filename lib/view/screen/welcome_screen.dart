@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:virtual_pa/utilities/custom_navigator.dart';
 import 'package:virtual_pa/view/component/buttons/custom_text_button.dart';
 import 'package:virtual_pa/view/screen/authentication_and_registration/register_screen.dart';
@@ -11,12 +10,11 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    requestContactsPermission();
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.only(left: 20,right: 20,bottom: 20),
+          padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
           child: Column(
             children: [
               Flexible(
@@ -93,11 +91,4 @@ class WelcomeScreen extends StatelessWidget {
       ),
     );
   }
-
-  void requestContactsPermission()async{
-    if (!await Permission.contacts.request().isGranted) {
-      requestContactsPermission();
-    }
-  }
-
 }

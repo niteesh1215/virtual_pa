@@ -35,12 +35,13 @@ class CustomPasswordField extends StatelessWidget {
                   validationController.isValid!
               ? false
               : true;
+          print(showErrorBorder);
           return TextFormField(
             obscureText: isPasswordVisible,
             onChanged: (String text) {
-
+              print(text);
               final status = validationController.validate(text);
-              if (onChange == null) onChange!(text);
+              if (onChange != null) onChange!(text);
             },
             onFieldSubmitted: onSubmitted,
             validator: (String? text) {

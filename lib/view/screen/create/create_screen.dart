@@ -103,7 +103,7 @@ class _CreateScreenState extends State<CreateScreen> {
                             'Add a message e.g. \n' +
                                 (createTaskOrAppointmentController
                                             .selectedCreateOption ==
-                                        SelectedCreateOption.taskOptions
+                                        CreateOption.taskOptions
                                     ? '#task Complete the presentation.'
                                     : '#appointment Requesting appointment for a checkup.'),
                             // style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Theme.of(context).colorScheme.primary),
@@ -132,7 +132,7 @@ class _CreateScreenState extends State<CreateScreen> {
           ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {},
+          onPressed: onSubmit,
           child: const Icon(Icons.send_outlined),
         ),
       ),
@@ -146,4 +146,10 @@ class _CreateScreenState extends State<CreateScreen> {
         ),
         borderRadius: BorderRadius.circular(18),
       );
+
+  void onSubmit() {
+    if (_formKey.currentState!.validate()) {
+      print('valid');
+    }
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:contacts_service/contacts_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:virtual_pa/utilities/local_contacts.dart';
+import 'package:virtual_pa/utilities/permission_handler.dart';
 
 class RegisteredContact {
   String phoneNo;
@@ -43,6 +44,7 @@ class RegisteredContacts with ChangeNotifier {
   }
 
   void readAndFindRegisteredContacts() async {
+    PermissionHandler.requestContactsPermission();
     _isSearchInProgress = true;
     notifyListeners();
     List<Contact> contacts = await LocalContacts.getContacts();
