@@ -2,11 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:virtual_pa/controller/timer_controller.dart';
+import 'package:virtual_pa/utilities/common_functions.dart';
 import 'package:virtual_pa/view/component/buttons/custom_icon_button.dart';
 
 class OTP extends StatefulWidget {
-  const OTP({Key? key, required this.onTapResend}) : super(key: key);
+  const OTP({Key? key, required this.onTapResend, required this.onSubmitted})
+      : super(key: key);
   final VoidCallback onTapResend;
+  final Function(String otp) onSubmitted;
 
   @override
   State<OTP> createState() => _OTPState();
@@ -114,6 +117,14 @@ class _OTPState extends State<OTP> {
                 } else {
                   return null;
                 }*/
+            },
+            onSubmitted: (String v) {
+              if (!RegExp(r"^[0-9]{6}$").hasMatch(v)) {
+                widget.onSubmitted(v.trim());
+              } else {
+                CommonFunctions.showSnackBar(
+                    context, 'Please enter a valid OTP.');
+              }
             },
             pinTheme: PinTheme(
               shape: PinCodeFieldShape.box,

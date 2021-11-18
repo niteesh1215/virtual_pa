@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 class CommonFunctions {
-  static void showBottomSheet(context,
+  static Future<void> showBottomSheet(context,
       {required Widget child,
       bool isDismissible = true,
-      BoxConstraints? constraints}) {
-    showModalBottomSheet(
+      BoxConstraints? constraints}) async {
+    await showModalBottomSheet(
       isDismissible: isDismissible,
       constraints: constraints,
       shape: const RoundedRectangleBorder(

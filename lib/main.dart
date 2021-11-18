@@ -34,7 +34,6 @@ class _VirtualPAState extends State<VirtualPA> {
   final tasks = Tasks();
   @override
   Widget build(BuildContext context) {
-    PermissionHandler.requestContactsPermission();
     return FutureBuilder(
         future: _initialization,
         builder: (context, snapshot) {
@@ -61,19 +60,9 @@ class _VirtualPAState extends State<VirtualPA> {
                   scrollBehavior: const CustomScrollBehavior(),
                 );
               },
-              child: StreamBuilder<fb.User?>(
-                  stream: firebaseAuthController!.authStateStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Scaffold();
-                    }
-
-                    final user = snapshot.data;
-                    print('user*********$user');
-                    return user == null
-                        ? const WelcomeScreen()
-                        : const HomeScreen();
-                  }),
+              child: firebaseAuthController!.getFirebaseUser() == null
+                  ? const WelcomeScreen()
+                  : const HomeScreen(),
             ),
           );
         });

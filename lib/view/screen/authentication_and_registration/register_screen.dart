@@ -13,6 +13,7 @@ import 'package:virtual_pa/view/component/input_field/custom_password_field.dart
 import 'package:virtual_pa/view/component/buttons/custom_text_button.dart';
 import 'package:virtual_pa/view/component/input_field/custom_text_field.dart';
 import 'package:virtual_pa/view/screen/authentication_and_registration/otp.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:virtual_pa/view/screen/home/home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -24,32 +25,45 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool _passwordVisibility = true;
-  String? countryCode = '+91';
+  String? _countryCode = '+91';
   final _formKey = GlobalKey<FormState>();
 
   late User _user;
   late FirebaseAuthController _firebaseAuthController;
 
   void _register(BuildContext context) {
-    CommonFunctions.showBottomSheet(
-      context,
-      child: OTP(
-        onTapResend: () {},
-      ),
-      constraints: BoxConstraints(
-        minHeight: MediaQuery.of(context).size.height * 0.8,
-      ),
-    );
-    return;
     if (_formKey.currentState!.validate()) {
-      if (countryCode != null) {
-        _user.phoneNo = countryCode! + _user.phoneNo!;
+      if (_countryCode != null) {
+        if (!_user.phoneNo!.contains(_countryCode!)) {
+          _user.phoneNo = _countryCode! + _user.phoneNo!;
+          print(_user.phoneNo);
+        }
       } else {
         CommonFunctions.showSnackBar(context, 'Please select country');
+        return;
       }
+      _firebaseAuthController.authStateStream.listen((fb.User? user) {
+        if (user != null) {
+          CustomNavigator.navigateTo(context, (context) => const HomeScreen());
+        }
+      });
 
       _firebaseAuthController.verifyPhoneNumber(context,
-          phoneNumber: _user.phoneNo!);
+          phoneNumber: _user.phoneNo!, onCodeSent: (verificationId) {
+        CommonFunctions.showBottomSheet(
+          context,
+          child: OTP(
+            onTapResend: () {
+              _firebaseAuthController.verifyPhoneNumber(context,
+                  phoneNumber: _user.phoneNo!);
+            },
+            onSubmitted: (String otp) {
+              _firebaseAuthController.signInWithOtp(context,
+                  verificationId: verificationId, otp: otp);
+            },
+          ),
+        );
+      });
 
       /*Navigator.push(
         context,
@@ -112,7 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         children: [
                           CountryCodePicker(
                             padding: const EdgeInsets.all(0.0),
-                            onChanged: (CountryCode c) => countryCode = c.code,
+                            onChanged: (CountryCode c) => _countryCode = c.code,
                             // Initial selection and favorite can be one of code ('IT') OR dial_code('+39')
                             initialSelection: 'IN',
                             // optional. Shows only country name and flag
@@ -142,7 +156,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       CustomPasswordField(
                         isPasswordVisible: _passwordVisibility,
-                        onTap: () {
+                        onTapEye: () {
                           setState(() {
                             _passwordVisibility = !_passwordVisibility;
                           });

@@ -8,7 +8,7 @@ class CustomPasswordField extends StatelessWidget {
       {Key? key,
       this.hintText,
       required this.isPasswordVisible,
-      required this.onTap,
+      required this.onTapEye,
       ValidationController? validationController,
       this.onSubmitted,
       this.onChange})
@@ -19,7 +19,7 @@ class CustomPasswordField extends StatelessWidget {
 
   final ValidationController? _validationController;
   final bool isPasswordVisible;
-  final VoidCallback onTap;
+  final VoidCallback onTapEye;
   final void Function(String)? onSubmitted;
   final void Function(String)? onChange;
 
@@ -37,7 +37,7 @@ class CustomPasswordField extends StatelessWidget {
               : true;
           print(showErrorBorder);
           return TextFormField(
-            obscureText: isPasswordVisible,
+            obscureText: !isPasswordVisible,
             onChanged: (String text) {
               print(text);
               final status = validationController.validate(text);
@@ -62,9 +62,11 @@ class CustomPasswordField extends StatelessWidget {
                 child: IconButton(
                   splashColor: Colors.transparent,
                   highlightColor: Colors.transparent,
-                  onPressed: onTap,
+                  onPressed: onTapEye,
                   icon: Icon(
-                    isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                    !isPasswordVisible
+                        ? Icons.visibility
+                        : Icons.visibility_off,
                     color: Colors.grey,
                   ),
                 ),

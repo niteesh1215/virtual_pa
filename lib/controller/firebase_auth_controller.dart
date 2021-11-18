@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:virtual_pa/utilities/common_functions.dart';
 
 enum AuthErrorType { invalidPhoneNumber, unknownError }
@@ -10,6 +11,8 @@ class FirebaseAuthController with ChangeNotifier {
 
   int? resendToken;
   String? verificationId;
+
+  bool _isLoadingIndicatorVisible = false;
 
   Stream<User?> get authStateStream => _auth.authStateChanges();
 
@@ -27,28 +30,37 @@ class FirebaseAuthController with ChangeNotifier {
     return _auth.currentUser;
   }
 
+  Future<void> signOut() async {
+    await _auth.signOut();
+  }
+
   Future<void> verifyPhoneNumber(BuildContext context,
       {required String phoneNumber,
       int? resendToken,
-      Function(AuthErrorType)? onError}) async {
-    bool isLoadingIndicatorVisible = true;
+      Function(AuthErrorType)? onError,
+      Function(String verificatinId)? onAutoCodeRetrievalTimeout,
+      Function(String verificationId)? onCodeSent}) async {
+    _isLoadingIndicatorVisible = true;
     CommonFunctions.showCircularLoadingIndicatorDialog(context);
+    print('dialog open');
     try {
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         verificationCompleted: (PhoneAuthCredential credential) async {
+          print('Verification completed');
           await _auth.signInWithCredential(credential);
           hideLoadingIndicator(context);
-          isLoadingIndicatorVisible = false;
         },
         verificationFailed: (FirebaseAuthException e) {
           AuthErrorType errorType = AuthErrorType.unknownError;
           if (e.code == 'invalid-phone-number') {
-            errorType = AuthErrorType.unknownError;
-            print('The provided phone number is not valid.');
+            errorType = AuthErrorType.invalidPhoneNumber;
+            CommonFunctions.showSnackBar(context, 'Verification');
+          } else {
+            CommonFunctions.showSnackBar(context, 'An error occurred');
           }
           hideLoadingIndicator(context);
-          isLoadingIndicatorVisible = false;
+
           if (onError != null) {
             onError(errorType);
           }
@@ -56,20 +68,26 @@ class FirebaseAuthController with ChangeNotifier {
         codeSent: (String verificationId, int? resendToken) {
           this.verificationId = verificationId;
           this.resendToken = resendToken;
-
-          CommonFunctions.showSnackBar(context, 'Otp sent on the phone number');
+          CommonFunctions.showSnackBar(context, 'OTP sent on the phone number');
+          hideLoadingIndicator(context);
+          if (onCodeSent != null) {
+            onCodeSent(verificationId);
+          }
         },
         codeAutoRetrievalTimeout: (String verificationId) {
-          isLoadingIndicatorVisible = false;
           hideLoadingIndicator(context);
+          print('code auto retrieval tiemout');
+          if (onAutoCodeRetrievalTimeout != null) {
+            onAutoCodeRetrievalTimeout(verificationId);
+          }
         },
-        timeout: const Duration(seconds: 60),
+        timeout: const Duration(seconds: 30),
         forceResendingToken: resendToken,
       );
     } catch (e) {
       showGeneralErrorMessage(context);
+      hideLoadingIndicator(context);
     }
-    if (isLoadingIndicatorVisible) hideLoadingIndicator(context);
   }
 
   Future<void> signInWithOtp(BuildContext context,
@@ -81,6 +99,7 @@ class FirebaseAuthController with ChangeNotifier {
 
       // Sign the user in (or link) with the credential
       await _auth.signInWithCredential(credential);
+      print('signed in with otp');
     } on FirebaseAuthException catch (e) {
       print(e);
     } catch (e) {
@@ -94,6 +113,9 @@ class FirebaseAuthController with ChangeNotifier {
   }
 
   void hideLoadingIndicator(BuildContext context) {
-    Navigator.pop(context);
+    if (_isLoadingIndicatorVisible) {
+      _isLoadingIndicatorVisible = false;
+      Navigator.pop(context);
+    }
   }
 }

@@ -11,6 +11,7 @@ import 'package:virtual_pa/view/component/input_field/custom_password_field.dart
 import 'package:virtual_pa/view/component/buttons/custom_text_button.dart';
 import 'package:virtual_pa/view/component/input_field/custom_text_field.dart';
 import 'package:virtual_pa/view/screen/authentication_and_registration/register_screen.dart';
+import 'package:virtual_pa/view/screen/authentication_and_registration/reset_password.dart';
 import 'package:virtual_pa/view/screen/home/home_screen.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 
@@ -23,13 +24,13 @@ class SignInScreen extends StatefulWidget {
 
 class _SignInScreenState extends State<SignInScreen> {
   bool isPasswordVisible = true;
-  String? countryCode = '+91';
+  String? _countryCode = '+91';
   final _formKey = GlobalKey<FormState>();
   late User _user;
   void _signIn() {
     if (_formKey.currentState!.validate()) {
-      if (countryCode != null) {
-        _user.phoneNo = countryCode! + _user.phoneNo!;
+      if (_countryCode != null) {
+        _user.phoneNo = _countryCode! + _user.phoneNo!;
       } else {
         CommonFunctions.showSnackBar(context, 'Please select country');
       }
@@ -42,6 +43,9 @@ class _SignInScreenState extends State<SignInScreen> {
       );
     }
   }
+
+  void _onTapForgotPassword() =>
+      CustomNavigator.navigateTo(context, (context) => const ResetPassword());
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +95,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         children: [
                           CountryCodePicker(
                             padding: const EdgeInsets.all(0.0),
-                            onChanged: (CountryCode c) => countryCode = c.code,
+                            onChanged: (CountryCode c) => _countryCode = c.code,
                             // Initial selection and favorite can be one of code ('IT') OR dial_code('+39')
                             initialSelection: 'IN',
                             // optional. Shows only country name and flag
@@ -121,7 +125,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                       CustomPasswordField(
                         isPasswordVisible: isPasswordVisible,
-                        onTap: () {
+                        onTapEye: () {
                           setState(() {
                             isPasswordVisible = !isPasswordVisible;
                           });
@@ -131,8 +135,20 @@ class _SignInScreenState extends State<SignInScreen> {
                     ],
                   ),
                 ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: InkWell(
+                    onTap: _onTapForgotPassword,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8.0, vertical: 4.0),
+                      child: Text('Forgot password ?',
+                          style: Theme.of(context).textTheme.bodyText1),
+                    ),
+                  ),
+                ),
                 const SizedBox(
-                  height: 30.0,
+                  height: 50.0,
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

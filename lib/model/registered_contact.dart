@@ -44,7 +44,7 @@ class RegisteredContacts with ChangeNotifier {
   }
 
   void readAndFindRegisteredContacts() async {
-    PermissionHandler.requestContactsPermission();
+    await PermissionHandler.requestContactsPermission();
     _isSearchInProgress = true;
     notifyListeners();
     List<Contact> contacts = await LocalContacts.getContacts();
