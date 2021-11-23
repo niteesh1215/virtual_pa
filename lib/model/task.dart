@@ -6,6 +6,7 @@ enum TaskStatus { completed, started, queued }
 class Task implements Comparable<Task> {
   String? taskId;
   String? byUserId;
+  String? byUserPhoneNo;
   String taskString;
   String? atUserId;
   RegisteredContact? registeredContact;
@@ -17,6 +18,7 @@ class Task implements Comparable<Task> {
     this.taskId,
     required this.taskString,
     this.byUserId,
+    this.byUserPhoneNo,
     this.atUserId,
     this.completeBy,
     this.urgent = false,
@@ -54,6 +56,7 @@ class Task implements Comparable<Task> {
       taskId: data['_id'],
       taskString: data['taskString'],
       byUserId: data['byuserId'],
+      byUserPhoneNo: data['byUserPhoneNo'],
       atUserId: data['atuserId'],
       completeBy: Jiffy(data['completeBy'], 'dd-MM-yyyy-h:mm:ss a').dateTime,
       urgent: data['urgent'],
@@ -67,6 +70,7 @@ class Task implements Comparable<Task> {
   Map<String, dynamic> toJson() {
     return {
       "byuserId": byUserId,
+      "byUserPhoneNo": byUserPhoneNo,
       "atuserId": atUserId,
       "taskString": taskString,
       "completeBy": Jiffy(completeBy).format('dd-MM-yyyy-h:mm:ss a'),

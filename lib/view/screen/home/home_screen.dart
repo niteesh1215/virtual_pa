@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:jiffy/jiffy.dart';
 import 'package:provider/provider.dart';
 import 'package:virtual_pa/controller/api_end_points/task_api_controller.dart';
 import 'package:virtual_pa/controller/api_end_points/user_api_controller.dart';
@@ -10,7 +9,7 @@ import 'package:virtual_pa/model/registered_contact.dart';
 import 'package:virtual_pa/model/task.dart';
 import 'package:virtual_pa/model/tasks.dart';
 import 'package:virtual_pa/model/user.dart';
-import 'package:virtual_pa/view/component/buttons/custom_icon_button.dart';
+import 'package:virtual_pa/utilities/common_functions.dart';
 import 'package:virtual_pa/view/component/custom_chip.dart';
 import 'package:virtual_pa/view/screen/create/create_screen.dart';
 
@@ -114,129 +113,150 @@ class TaskView extends StatefulWidget {
 }
 
 class _TaskViewState extends State<TaskView> {
-  final ValueNotifier<bool> _showForMeTaskList = ValueNotifier<bool>(true);
+  bool _showForMeTaskList = true;
   Tasks? tasks;
   late User user;
-
   final TaskApiController taskApiController = TaskApiController();
 
   @override
   void initState() {
-    _showForMeTaskList.addListener(() {});
     super.initState();
+  }
+
+  void _showForMeList(bool value) {
+    if (_showForMeTaskList == value) return;
+    setState(() {
+      _showForMeTaskList = value;
+    });
   }
 
   @override
   void dispose() {
-    _showForMeTaskList.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     user = Provider.of<User>(context, listen: false);
-    if (tasks == null) {
-      tasks = Provider.of<Tasks>(context);
-      for (int i = 0; i < 50; i++) {
-        tasks!.addTask(
-          Task(
-            taskId: '$i',
-            taskString: 'Complete presentation',
-            atUserId: '$i',
-            completeBy: DateTime.now(),
-            registeredContact: RegisteredContact(
-              id: '$i',
-              phoneNo: '+919657121851',
-              fullName: 'Niteesh',
-            ),
-          ),
-          shouldNotify: false,
-        );
-      }
-    }
+    tasks = Provider.of<Tasks>(context, listen: false);
+    print(_showForMeTaskList);
     return Column(
       children: [
         Container(
           color: context.read<AppTheme>().backgroundColor,
           child: Padding(
             padding: const EdgeInsets.all(8.0),
-            child: ValueListenableBuilder<bool>(
-                valueListenable: _showForMeTaskList,
-                builder: (context, value, _) {
-                  return Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: CustomChip(
-                          label: const Text('For Me'),
-                          onPressed: () async {
-                            _showForMeTaskList.value = true;
-                            final userAPIController = UserAPIController();
-                            final LResponse response =
-                                await userAPIController.retrieveUser(
-                                    userId: '6199f651fa4aacb6415d1c5');
-                            print(response.data);
-                            print(response.message);
-                            print(response.responseStatus);
-                          },
-                          isSelected: value,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: CustomChip(
-                          label: const Text('By Me'),
-                          onPressed: () {
-                            _showForMeTaskList.value = false;
-                          },
-                          isSelected: !value,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: CustomChip(
-                          label: const Text('Urgent'),
-                          onPressed: () {},
-                        ),
-                      ),
-                    ],
-                  );
-                }),
+            child: Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: CustomChip(
+                    label: const Text('For Me'),
+                    onPressed: () async {
+                      _showForMeList(true);
+                    },
+                    isSelected: _showForMeTaskList,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: CustomChip(
+                    label: const Text('By Me'),
+                    onPressed: () {
+                      _showForMeList(false);
+                    },
+                    isSelected: !_showForMeTaskList,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: CustomChip(
+                    label: const Text('Urgent'),
+                    onPressed: () {},
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         Expanded(
           child: FutureBuilder<LResponse<List<Task>?>>(
               future: taskApiController.retrieveTask(user.userId!,
-                  getForMeTask: false),
+                  getForMeTask: _showForMeTaskList),
               builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  print(snapshot.data);
+                if (!snapshot.hasData) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
                 }
-                return ListView.builder(
-                  itemCount: tasks!.list.length,
-                  itemBuilder: (context, index) {
-                    final task = tasks!.list[index];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8.0, vertical: 5.0),
-                      child: ListTile(
-                        tileColor: Theme.of(context).colorScheme.surface,
-                        shape: RoundedRectangleBorder(
-                            side: BorderSide(
-                                color: context.read<AppTheme>().borderColor),
-                            borderRadius: BorderRadius.circular(18.0)),
-                        title: Text(
-                          task.taskString,
-                          overflow: TextOverflow.fade,
-                        ),
-                        subtitle:
-                            Text('By ${task.registeredContact!.fullName}'),
-                        trailing: Column(
-                          children: [
-                            Text(Jiffy(task.completeBy).format('dd MMM yyyy'))
-                          ],
-                        ),
-                      ),
+                if (snapshot.data!.data != null &&
+                    snapshot.data!.data!.isNotEmpty) {
+                  tasks!.addTasks(snapshot.data!.data!, shouldNotify: false);
+                  print(snapshot.data!.data!);
+                } else {
+                  return Center(
+                    child: Text(
+                      'No tasks ' +
+                          (_showForMeTaskList ? 'for you yet' : 'by you yet'),
+                    ),
+                  );
+                }
+                return Consumer<Tasks>(
+                  builder: (context, _, __) {
+                    return ListView.builder(
+                      itemCount: tasks!.list.length,
+                      itemBuilder: (context, index) {
+                        final task = tasks!.list[index];
+                        task.registeredContact = RegisteredContact(
+                            phoneNo: task.byUserPhoneNo!, id: task.byUserId);
+                        //todo find registered contact
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0, vertical: 5.0),
+                          child: Container(
+                            constraints: const BoxConstraints(
+                              maxHeight: 100,
+                            ),
+                            child: ListTile(
+                              tileColor: Theme.of(context).colorScheme.surface,
+                              shape: RoundedRectangleBorder(
+                                  side: BorderSide(
+                                      color:
+                                          context.read<AppTheme>().borderColor),
+                                  borderRadius: BorderRadius.circular(18.0)),
+                              title: Text(
+                                CommonFunctions.cutString(task.taskString, 100),
+                              ),
+                              subtitle: _showForMeTaskList
+                                  ? ChangeNotifierProvider.value(
+                                      value: task.registeredContact,
+                                      builder: (context, snapshot) {
+                                        return ByText(task: task);
+                                      },
+                                    )
+                                  : null,
+                              trailing: Column(
+                                children: [
+                                  Text(
+                                    CommonFunctions.getddMMyyyy(
+                                        task.completeBy!),
+                                  ),
+                                  Text(
+                                    task.urgent ? 'URGENT' : '',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyText2!
+                                        .copyWith(
+                                            color: context
+                                                .read<AppTheme>()
+                                                .successColor),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 );
@@ -244,6 +264,22 @@ class _TaskViewState extends State<TaskView> {
         )
       ],
     );
+  }
+}
+
+class ByText extends StatelessWidget {
+  const ByText({
+    Key? key,
+    required this.task,
+  }) : super(key: key);
+
+  final Task task;
+
+  @override
+  Widget build(BuildContext context) {
+    final registeredContact = Provider.of<RegisteredContact>(context);
+    return Text(
+        'By ${registeredContact.fullName ?? registeredContact.phoneNo}');
   }
 }
 

@@ -56,4 +56,9 @@ class CommonFunctions {
   static DateTime getDateFromddMMyyyy(String dateTimeString) {
     return Jiffy(dateTimeString, 'dd-MM-yyyy').dateTime;
   }
+
+  static String cutString(String text, int maxCharacters) {
+    if (text.length <= maxCharacters) return text;
+    return text.substring(0, maxCharacters - 1) + '...';
+  }
 }

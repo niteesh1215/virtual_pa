@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:provider/provider.dart';
+import 'package:virtual_pa/controller/api_end_points/user_api_controller.dart';
 import 'package:virtual_pa/model/appointment.dart';
+import 'package:virtual_pa/model/appointment_slot.dart';
+import 'package:virtual_pa/model/l_response.dart';
 import 'package:virtual_pa/model/registered_contact.dart';
 import 'package:virtual_pa/model/task.dart';
 import 'package:virtual_pa/utilities/common_functions.dart';
@@ -34,6 +37,19 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
   bool _showContactsPicker = false;
   bool _showSlotPicker = false;
   bool _showMessageText = false;
+
+  void reset() {
+    _task = null;
+    _appointment = null;
+    textEditingController.clear();
+    _selectedCreateOption = CreateOption.mainOptions;
+    _showDateTimePicker = false;
+    _showDatePicker = false;
+    _showContactsPicker = false;
+    _showSlotPicker = false;
+    _showMessageText = false;
+    _removedList = [];
+  }
 
   Task? get task => _task;
   Appointment? get appointment => _appointment;
@@ -120,7 +136,7 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
                 _appointment?.atUserId = contact.id;
               }
               replaceText(
-                  textEditingController.text.trim() + contact.fullName + ' ',
+                  textEditingController.text.trim() + contact.fullName! + ' ',
                   trim: false);
             },
           ),
@@ -131,11 +147,17 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
   bool get showSlotPicker => _showSlotPicker;
 
   set showSlotPicker(bool value) {
+    if (appointment == null || appointment!.atUserId == null) {
+      CommonFunctions.showSnackBar(
+          context, 'Please select @ before selecting slot');
+      return;
+    }
     if (_showSlotPicker != value) {
       _showSlotPicker = value;
       notifyListeners();
       CommonFunctions.showBottomSheet(context,
           child: SlotPicker(
+            userId: appointment!.atUserId!,
             onClose: () {
               replaceText(textEditingController.text.replaceAll('#slot', ''));
             },
@@ -427,9 +449,9 @@ class ContactPicker extends StatelessWidget {
                   onSelected(contact);
                   Navigator.pop(context);
                 },
-                title: Text(contact.fullName),
+                title: Text(contact.fullName!),
                 subtitle: Text(
-                  contact.phoneNo,
+                  contact.phoneNo!,
                   style: Theme.of(context).textTheme.caption,
                 ),
               );
@@ -448,8 +470,13 @@ class ContactPicker extends StatelessWidget {
 }
 
 class SlotPicker extends StatelessWidget {
-  const SlotPicker({Key? key, required this.onClose, required this.onSelected})
+  const SlotPicker(
+      {Key? key,
+      required this.userId,
+      required this.onClose,
+      required this.onSelected})
       : super(key: key);
+  final String userId;
   final VoidCallback onClose;
   final void Function(String) onSelected;
 
@@ -474,23 +501,53 @@ class SlotPicker extends StatelessWidget {
             ],
           ),
           Expanded(
-            child: SingleChildScrollView(
-              child: Wrap(
-                children: [
-                  for (int i = 0; i < 20; i++)
-                    Padding(
-                      padding: EdgeInsets.only(right: i % 2 != 0 ? 0.0 : 15.0),
-                      child: CustomChip(
-                        label: const Text('12:00PM - 01:00PM'),
-                        onPressed: () {
-                          onSelected('12:00PM - 01:00PM');
-                          Navigator.pop(context);
-                        },
-                      ),
+            child: FutureBuilder<LResponse<List<AppointmentSlot>?>>(
+                future: UserAPIController().retrieveAppointment(userId),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  final lResponse = snapshot.data!;
+
+                  if (lResponse.responseStatus == ResponseStatus.failed) {
+                    return const Center(
+                      child:
+                          Text('Could not fetch the slots, an error occurred'),
+                    );
+                  } else if (lResponse.data != null &&
+                      lResponse.data!.isEmpty) {
+                    return const Center(
+                      child: Text('Appointments are not enabled by this user'),
+                    );
+                  }
+
+                  final appointmentSlots = lResponse.data!;
+
+                  return SingleChildScrollView(
+                    child: Wrap(
+                      children: [
+                        for (int i = 0; i < appointmentSlots.length; i++)
+                          Padding(
+                            padding:
+                                EdgeInsets.only(right: i % 2 != 0 ? 0.0 : 15.0),
+                            child: CustomChip(
+                              label: Text(
+                                  appointmentSlots[i].timing!.toUpperCase()),
+                              onPressed: () {
+                                onSelected(
+                                  appointmentSlots[i].timing!.toUpperCase(),
+                                );
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ),
+                      ],
                     ),
-                ],
-              ),
-            ),
+                  );
+                }),
           )
         ],
       ),

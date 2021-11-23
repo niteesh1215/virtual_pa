@@ -168,12 +168,16 @@ class _CreateScreenState extends State<CreateScreen> {
         final task = _createTaskOrAppointmentController.task!;
         task.timeAdded = DateTime.now();
         task.byUserId = user.userId;
+        task.byUserPhoneNo = user.phoneNo;
         final LResponse<Task?> lResponse =
             await taskApiController.addTask(task);
         if (lResponse.responseStatus == ResponseStatus.success) {
           print(lResponse.data);
+          CommonFunctions.showSnackBar(context, 'Added new task');
+          _createTaskOrAppointmentController.reset();
         } else {
           print(lResponse.data);
+          CommonFunctions.showSnackBar(context, lResponse.message);
         }
       } else if (_createTaskOrAppointmentController.selectedCreateOption ==
           CreateOption.appointmentOptions) {
@@ -185,8 +189,14 @@ class _CreateScreenState extends State<CreateScreen> {
         final appointmentApiController = AppointmentApiController();
         final LResponse<Appointment?> lResponse =
             await appointmentApiController.addAppointment(appointment);
-        print(lResponse.responseStatus);
-        print(lResponse.data);
+        if (lResponse.responseStatus == ResponseStatus.success) {
+          print(lResponse.data);
+          CommonFunctions.showSnackBar(context, 'Added new appointment');
+          _createTaskOrAppointmentController.reset();
+        } else {
+          print(lResponse.data);
+          CommonFunctions.showSnackBar(context, lResponse.message);
+        }
       }
 
       Navigator.pop(context);

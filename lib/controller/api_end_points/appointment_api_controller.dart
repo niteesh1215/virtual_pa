@@ -36,13 +36,14 @@ class AppointmentApiController extends APIController {
       {getForMeAppointment = true}) async {
     final data =
         getForMeAppointment ? {'atuserId': myUserId} : {'byuserId': myUserId};
+    final url = getForMeAppointment ? '/retrieve-for-me' : '/retrieve-by-me';
 
     final LResponse<List<Appointment>?> lResponse =
         getDefaultLResponse<List<Appointment>?>();
     await withTryBlock(
         lResponse: lResponse,
         codeToHandle: () async {
-          final response = await dio.post('/retrieve-for-me', data: data);
+          final response = await dio.post(url, data: data);
           if (getStatus(response)) {
             final data = getData(response);
             if (data == null) {

@@ -56,6 +56,7 @@ class Appointment with Comparable<Appointment> {
   }
 
   factory Appointment.fromJson(Map<String, dynamic> data) {
+    print('hi');
     return Appointment(
         byUserId: data['byuserId'],
         atUserId: data['atuserId'],
@@ -67,7 +68,9 @@ class Appointment with Comparable<Appointment> {
         timeStamp: data['addedOn'] != null
             ? CommonFunctions.getDateFromddMMyyyyhmmssa(data['addedOn'])
             : null,
-        status: getTaskStatus(data['status']));
+        status: data['status'] != null
+            ? getTaskStatus(data['status'])
+            : AppointmentStatus.pending);
   }
 
   Map<String, dynamic> toJson() {

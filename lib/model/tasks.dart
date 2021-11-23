@@ -2,9 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:virtual_pa/model/task.dart';
 
 class Tasks with ChangeNotifier {
-  final List<Task> _list = [];
+  List<Task> _list = [];
 
   List<Task> get list => _list;
+
+  void addTasks(List<Task> tasks, {bool shouldNotify = true}) {
+    _list = tasks;
+    if (shouldNotify) notifyListeners();
+  }
 
   void addTask(Task task, {bool shouldNotify = true}) {
     _list.add(task);

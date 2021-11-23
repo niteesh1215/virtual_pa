@@ -19,7 +19,7 @@ class APIController {
       lResponse.message = getErrorMessage(e.type);
     } catch (e) {
       print(e.toString());
-      print('#001 Error while adding user');
+      print('#001 Error while ${dio.options.baseUrl}');
     }
   }
 
