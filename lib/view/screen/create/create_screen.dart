@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:virtual_pa/controller/api_end_points/appointment_api_controller.dart';
+import 'package:virtual_pa/controller/api_end_points/task_api_controller.dart';
 import 'package:virtual_pa/controller/create_task_or_appointment_controller.dart';
 import 'package:virtual_pa/model/app_theme.dart';
+import 'package:virtual_pa/model/appointment.dart';
+import 'package:virtual_pa/model/l_response.dart';
 import 'package:virtual_pa/model/registered_contact.dart';
+import 'package:virtual_pa/model/task.dart';
+import 'package:virtual_pa/model/user.dart';
+import 'package:virtual_pa/utilities/common_functions.dart';
 import 'package:virtual_pa/view/component/buttons/custom_icon_button.dart';
 import 'package:provider/provider.dart';
 import 'package:virtual_pa/view/component/custom_chip.dart';
@@ -22,6 +29,8 @@ class _CreateScreenState extends State<CreateScreen> {
   late final CreateTaskOrAppointmentController
       _createTaskOrAppointmentController;
 
+  late User user;
+
   @override
   void initState() {
     _createTaskOrAppointmentController = CreateTaskOrAppointmentController(
@@ -38,6 +47,9 @@ class _CreateScreenState extends State<CreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    user = Provider.of<User>(context, listen: false);
+    print(user.userId);
+
     return ChangeNotifierProvider.value(
       value: _createTaskOrAppointmentController,
       child: Scaffold(
@@ -147,9 +159,37 @@ class _CreateScreenState extends State<CreateScreen> {
         borderRadius: BorderRadius.circular(18),
       );
 
-  void onSubmit() {
+  void onSubmit() async {
     if (_formKey.currentState!.validate()) {
-      print('valid');
+      CommonFunctions.showCircularLoadingIndicatorDialog(context);
+      if (_createTaskOrAppointmentController.selectedCreateOption ==
+          CreateOption.taskOptions) {
+        final taskApiController = TaskApiController();
+        final task = _createTaskOrAppointmentController.task!;
+        task.timeAdded = DateTime.now();
+        task.byUserId = user.userId;
+        final LResponse<Task?> lResponse =
+            await taskApiController.addTask(task);
+        if (lResponse.responseStatus == ResponseStatus.success) {
+          print(lResponse.data);
+        } else {
+          print(lResponse.data);
+        }
+      } else if (_createTaskOrAppointmentController.selectedCreateOption ==
+          CreateOption.appointmentOptions) {
+        final appointment = _createTaskOrAppointmentController.appointment!;
+        appointment.byUserId = user.userId;
+        appointment.timeStamp = DateTime.now();
+        appointment.phoneNo = user.phoneNo;
+        print(appointment);
+        final appointmentApiController = AppointmentApiController();
+        final LResponse<Appointment?> lResponse =
+            await appointmentApiController.addAppointment(appointment);
+        print(lResponse.responseStatus);
+        print(lResponse.data);
+      }
+
+      Navigator.pop(context);
     }
   }
 }

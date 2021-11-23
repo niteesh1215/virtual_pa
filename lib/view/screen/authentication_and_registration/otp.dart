@@ -118,8 +118,10 @@ class _OTPState extends State<OTP> {
                   return null;
                 }*/
             },
+            autoDismissKeyboard: false,
             onSubmitted: (String v) {
-              if (!RegExp(r"^[0-9]{6}$").hasMatch(v)) {
+              print('submitted otp');
+              if (RegExp(r"^[0-9]{6}$").hasMatch(v)) {
                 widget.onSubmitted(v.trim());
               } else {
                 CommonFunctions.showSnackBar(

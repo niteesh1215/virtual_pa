@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:virtual_pa/constants.dart';
+import 'package:virtual_pa/controller/api_end_points/user_api_controller.dart';
 import 'package:virtual_pa/controller/firebase_auth_controller.dart';
+import 'package:virtual_pa/controller/hive_controller.dart';
 import 'package:virtual_pa/controller/textfield_validation_controller.dart';
+import 'package:virtual_pa/model/l_response.dart';
 import 'package:virtual_pa/model/user.dart';
 import 'package:virtual_pa/utilities/common_functions.dart';
 import 'package:virtual_pa/utilities/custom_navigator.dart';
@@ -30,48 +33,77 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   late User _user;
   late FirebaseAuthController _firebaseAuthController;
+  bool requestSent = false;
 
-  void _register(BuildContext context) {
-    if (_formKey.currentState!.validate()) {
-      if (_countryCode != null) {
-        if (!_user.phoneNo!.contains(_countryCode!)) {
-          _user.phoneNo = _countryCode! + _user.phoneNo!;
-          print(_user.phoneNo);
+  void _register(BuildContext context) async {
+    try {
+      if (_formKey.currentState!.validate()) {
+        if (_countryCode != null) {
+          if (!_user.phoneNo!.contains(_countryCode!)) {
+            _user.phoneNo = _countryCode! + _user.phoneNo!;
+            print(_user.phoneNo);
+          }
+        } else {
+          CommonFunctions.showSnackBar(context, 'Please select country');
+          return;
         }
-      } else {
-        CommonFunctions.showSnackBar(context, 'Please select country');
-        return;
-      }
-      _firebaseAuthController.authStateStream.listen((fb.User? user) {
-        if (user != null) {
-          CustomNavigator.navigateTo(context, (context) => const HomeScreen());
-        }
-      });
+        await _firebaseAuthController.signOut();
+        _firebaseAuthController.authStateStream.listen((fb.User? user) async {
+          if (user != null && !requestSent) {
+            requestSent = true;
+            CommonFunctions.showCircularLoadingIndicatorDialog(context);
+            final userAPIController = UserAPIController();
+            final LResponse<User?> response =
+                await userAPIController.addUser(_user);
+            print(context.widget.runtimeType);
+            if (response.responseStatus == ResponseStatus.success) {
+              _user.userId = response.data!.userId;
+              await Provider.of<HiveController>(context, listen: false)
+                  .addUser(_user);
+              Navigator.of(context);
+              CustomNavigator.navigateTo(
+                  context, (context) => const HomeScreen());
+            } else {
+              CommonFunctions.showSnackBar(context, response.message);
+              requestSent = false;
+              Navigator.of(context);
+            }
+          }
+        });
 
-      _firebaseAuthController.verifyPhoneNumber(context,
-          phoneNumber: _user.phoneNo!, onCodeSent: (verificationId) {
-        CommonFunctions.showBottomSheet(
-          context,
-          child: OTP(
-            onTapResend: () {
-              _firebaseAuthController.verifyPhoneNumber(context,
-                  phoneNumber: _user.phoneNo!);
-            },
-            onSubmitted: (String otp) {
-              _firebaseAuthController.signInWithOtp(context,
-                  verificationId: verificationId, otp: otp);
-            },
-          ),
-        );
-      });
+        _firebaseAuthController.verifyPhoneNumber(context,
+            phoneNumber: _user.phoneNo!, onCodeSent: (verificationId) {
+          CommonFunctions.showBottomSheet(
+            context,
+            child: OTP(
+              onTapResend: () {
+                _firebaseAuthController.verifyPhoneNumber(context,
+                    phoneNumber: _user.phoneNo!);
+              },
+              onSubmitted: (String otp) {
+                _firebaseAuthController.signInWithOtp(context,
+                    verificationId: verificationId, otp: otp);
+              },
+            ),
+          );
+        });
 
-      /*Navigator.push(
+        /*Navigator.push(
         context,
         CupertinoPageRoute(
           builder: (context) => const HomeScreen(),
         ),
       );*/
+      }
+    } catch (e) {
+      requestSent = false;
+      print('#001 An error occurred while registering');
     }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override

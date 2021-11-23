@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jiffy/jiffy.dart';
 
 class CommonFunctions {
   static Future<void> showBottomSheet(context,
@@ -38,5 +39,21 @@ class CommonFunctions {
         );
       },
     );
+  }
+
+  static String getddMMyyyyhmmssa(DateTime dateTime) {
+    return Jiffy(dateTime).format('dd-MM-yyyy h:mm:ss a');
+  }
+
+  static DateTime getDateFromddMMyyyyhmmssa(String dateTimeString) {
+    return Jiffy(dateTimeString, 'dd-MM-yyyy h:mm:ss a').dateTime;
+  }
+
+  static String getddMMyyyy(DateTime dateTime) {
+    return Jiffy(dateTime).format('dd-MM-yyyy');
+  }
+
+  static DateTime getDateFromddMMyyyy(String dateTimeString) {
+    return Jiffy(dateTimeString, 'dd-MM-yyyy').dateTime;
   }
 }

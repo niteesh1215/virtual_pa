@@ -36,6 +36,7 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
   bool _showMessageText = false;
 
   Task? get task => _task;
+  Appointment? get appointment => _appointment;
 
   CreateOption get selectedCreateOption => _selectedCreateOption;
 
@@ -53,7 +54,7 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
           onChanged: (date) {},
           onConfirm: (date) {
             addKeywordToText(Jiffy(date).yMMMMEEEEdjm);
-            _task?.completeBy = Jiffy(date).format('dd-MM-yyyy');
+            _task?.completeBy = date;
           },
           onCancel: () {
             _task?.completeBy = null;
@@ -81,7 +82,7 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
           onChanged: (date) {},
           onConfirm: (date) {
             addKeywordToText(Jiffy(date).yMMMMd);
-            _appointment?.date = Jiffy(date).format('dd-MM-yyyy');
+            _appointment?.date = date;
           },
           onCancel: () {
             _appointment?.date = null;
@@ -180,7 +181,7 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
       //reset the _removedList only if the _selectedCreateOption changed
       if (_selectedCreateOption != option) {
         _appointment =
-            Appointment(requesterId: '', phoneNo: '', appointmentString: text);
+            Appointment(byUserId: '', phoneNo: '', appointmentString: text);
         _removedList = [];
         _selectedCreateOption = option;
         selectedKeywordList = _kCreateKeywords[option]!;
@@ -256,7 +257,7 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
     //final int startIndex = text.trim().length - keyword.length;
     final String trimmedText = text.trimRight();
 
-    if(trimmedText.isEmpty) return;
+    if (trimmedText.isEmpty) return;
 
     final int startIndex = trimmedText[trimmedText.length - 1] == '@'
         ? trimmedText.length - 1

@@ -2,10 +2,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:provider/provider.dart';
+import 'package:virtual_pa/controller/api_end_points/task_api_controller.dart';
+import 'package:virtual_pa/controller/api_end_points/user_api_controller.dart';
 import 'package:virtual_pa/model/app_theme.dart';
+import 'package:virtual_pa/model/l_response.dart';
 import 'package:virtual_pa/model/registered_contact.dart';
 import 'package:virtual_pa/model/task.dart';
 import 'package:virtual_pa/model/tasks.dart';
+import 'package:virtual_pa/model/user.dart';
 import 'package:virtual_pa/view/component/buttons/custom_icon_button.dart';
 import 'package:virtual_pa/view/component/custom_chip.dart';
 import 'package:virtual_pa/view/screen/create/create_screen.dart';
@@ -19,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late User _user;
   void onPressFAB() {
     Navigator.push(
       context,
@@ -30,8 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final registeredContacts =
-        Provider.of<RegisteredContacts>(context, listen: false);
+    _user = Provider.of<User>(context, listen: false);
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -62,12 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Blinsia Pereira',
+                      _user.name ?? '',
                       style: Theme.of(context).textTheme.headline6,
                       textAlign: TextAlign.left,
                     ),
-                    const Text(
-                      '+919657121851',
+                    Text(
+                      '${_user.phoneNo ?? ''}\n${_user.userId}',
                       textAlign: TextAlign.left,
                     ),
                   ],
@@ -112,10 +116,13 @@ class TaskView extends StatefulWidget {
 class _TaskViewState extends State<TaskView> {
   final ValueNotifier<bool> _showForMeTaskList = ValueNotifier<bool>(true);
   Tasks? tasks;
+  late User user;
+
+  final TaskApiController taskApiController = TaskApiController();
+
   @override
   void initState() {
     _showForMeTaskList.addListener(() {});
-
     super.initState();
   }
 
@@ -127,6 +134,7 @@ class _TaskViewState extends State<TaskView> {
 
   @override
   Widget build(BuildContext context) {
+    user = Provider.of<User>(context, listen: false);
     if (tasks == null) {
       tasks = Provider.of<Tasks>(context);
       for (int i = 0; i < 50; i++) {
@@ -135,7 +143,7 @@ class _TaskViewState extends State<TaskView> {
             taskId: '$i',
             taskString: 'Complete presentation',
             atUserId: '$i',
-            completeBy: Jiffy().format('dd-MM-yyyy'),
+            completeBy: DateTime.now(),
             registeredContact: RegisteredContact(
               id: '$i',
               phoneNo: '+919657121851',
@@ -161,8 +169,15 @@ class _TaskViewState extends State<TaskView> {
                         padding: const EdgeInsets.only(right: 8.0),
                         child: CustomChip(
                           label: const Text('For Me'),
-                          onPressed: () {
+                          onPressed: () async {
                             _showForMeTaskList.value = true;
+                            final userAPIController = UserAPIController();
+                            final LResponse response =
+                                await userAPIController.retrieveUser(
+                                    userId: '6199f651fa4aacb6415d1c5');
+                            print(response.data);
+                            print(response.message);
+                            print(response.responseStatus);
                           },
                           isSelected: value,
                         ),
@@ -190,34 +205,42 @@ class _TaskViewState extends State<TaskView> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            itemCount: tasks!.list.length,
-            itemBuilder: (context, index) {
-              final task = tasks!.list[index];
-              return Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 5.0),
-                child: ListTile(
-                  tileColor: Theme.of(context).colorScheme.surface,
-                  shape: RoundedRectangleBorder(
-                      side: BorderSide(
-                          color: context.read<AppTheme>().borderColor),
-                      borderRadius: BorderRadius.circular(18.0)),
-                  title: Text(
-                    task.taskString,
-                    overflow: TextOverflow.fade,
-                  ),
-                  subtitle: Text('By ${task.registeredContact!.fullName}'),
-                  trailing: Column(
-                    children: [
-                      Text(Jiffy(task.completeBy, 'dd-MM-yyyy')
-                          .format('dd MMM yyyy'))
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
+          child: FutureBuilder<LResponse<List<Task>?>>(
+              future: taskApiController.retrieveTask(user.userId!,
+                  getForMeTask: false),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  print(snapshot.data);
+                }
+                return ListView.builder(
+                  itemCount: tasks!.list.length,
+                  itemBuilder: (context, index) {
+                    final task = tasks!.list[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8.0, vertical: 5.0),
+                      child: ListTile(
+                        tileColor: Theme.of(context).colorScheme.surface,
+                        shape: RoundedRectangleBorder(
+                            side: BorderSide(
+                                color: context.read<AppTheme>().borderColor),
+                            borderRadius: BorderRadius.circular(18.0)),
+                        title: Text(
+                          task.taskString,
+                          overflow: TextOverflow.fade,
+                        ),
+                        subtitle:
+                            Text('By ${task.registeredContact!.fullName}'),
+                        trailing: Column(
+                          children: [
+                            Text(Jiffy(task.completeBy).format('dd MMM yyyy'))
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
         )
       ],
     );
