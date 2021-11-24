@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:virtual_pa/constants.dart';
 import 'package:virtual_pa/utilities/custom_navigator.dart';
 import 'package:virtual_pa/view/component/buttons/custom_text_button.dart';
 import 'package:virtual_pa/view/screen/authentication_and_registration/register_screen.dart';
@@ -24,8 +25,8 @@ class WelcomeScreen extends StatelessWidget {
                       child: SizedBox(
                         width: MediaQuery.of(context).size.width * 0.8,
                         child: const Image(
-                          image:
-                              AssetImage('assets/images/team_illustration.png'),
+                          image: AssetImage(kWelcomeImage),
+                          filterQuality: FilterQuality.high,
                         ),
                       ),
                     ),

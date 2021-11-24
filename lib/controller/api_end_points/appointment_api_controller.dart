@@ -51,6 +51,7 @@ class AppointmentApiController extends APIController {
               lResponse.message = 'No appointments found';
               return;
             }
+            print(data);
             final List<Appointment> tasks = [];
             for (var task in (data as List)) {
               tasks.add(Appointment.fromJson(task));

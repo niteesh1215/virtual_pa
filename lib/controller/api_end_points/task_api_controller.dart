@@ -15,7 +15,8 @@ class TaskApiController extends APIController {
           final response = await dio.post('/add', data: task.toJson());
           print(response.statusCode);
           if (getStatus(response)) {
-            lResponse.data = Task.fromJson(getData<Map<String,dynamic>?>(response)!);
+            lResponse.data =
+                Task.fromJson(getData<Map<String, dynamic>?>(response)!);
             lResponse.responseStatus = ResponseStatus.success;
             lResponse.message = 'Success';
           } else {
@@ -45,6 +46,7 @@ class TaskApiController extends APIController {
               lResponse.message = 'No tasks found';
               return;
             }
+            print(data);
             final List<Task> tasks = [];
             for (var task in (data as List)) {
               tasks.add(Task.fromJson(task));

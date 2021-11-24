@@ -15,7 +15,7 @@ class RegisteredContact with ChangeNotifier {
 
   RegisteredContact(
       {String? id,
-      required String phoneNo,
+      String? phoneNo,
       String? fullName,
       List<AppointmentSlot>? appointmentSlots})
       : _id = id,
@@ -150,12 +150,16 @@ class RegisteredContacts with ChangeNotifier {
   }
 
   void searchRegisteredContact(RegisteredContact registeredContact) {
-    final RegisteredContact? foundRC = _contacts.firstWhere(
+    final RegisteredContact foundRC = _contacts.firstWhere(
         (rc) =>
             rc.phoneNo == registeredContact.phoneNo ||
             rc.id == registeredContact.id,
         orElse: () => registeredContact);
-    if (foundRC!.fullName != null) {
+    if (foundRC.phoneNo != null) {
+      registeredContact.setPhoneNo(foundRC.phoneNo!,
+          shouldNotifyListeners: false);
+    }
+    if (foundRC.fullName != null) {
       registeredContact.setFullName(foundRC.fullName!);
     }
   }

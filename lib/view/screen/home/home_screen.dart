@@ -1,15 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:virtual_pa/controller/api_end_points/appointment_api_controller.dart';
 import 'package:virtual_pa/controller/api_end_points/task_api_controller.dart';
 import 'package:virtual_pa/controller/api_end_points/user_api_controller.dart';
 import 'package:virtual_pa/model/app_theme.dart';
+import 'package:virtual_pa/model/appointment.dart';
 import 'package:virtual_pa/model/l_response.dart';
 import 'package:virtual_pa/model/registered_contact.dart';
 import 'package:virtual_pa/model/task.dart';
 import 'package:virtual_pa/model/tasks.dart';
 import 'package:virtual_pa/model/user.dart';
 import 'package:virtual_pa/utilities/common_functions.dart';
+import 'package:virtual_pa/view/component/buttons/custom_icon_button.dart';
 import 'package:virtual_pa/view/component/custom_chip.dart';
 import 'package:virtual_pa/view/screen/create/create_screen.dart';
 
@@ -139,6 +142,8 @@ class _TaskViewState extends State<TaskView> {
   Widget build(BuildContext context) {
     user = Provider.of<User>(context, listen: false);
     tasks = Provider.of<Tasks>(context, listen: false);
+    final registeredContacts =
+        Provider.of<RegisteredContacts>(context, listen: false);
     print(_showForMeTaskList);
     return Column(
       children: [
@@ -209,7 +214,10 @@ class _TaskViewState extends State<TaskView> {
                         final task = tasks!.list[index];
                         task.registeredContact = RegisteredContact(
                             phoneNo: task.byUserPhoneNo!, id: task.byUserId);
-                        //todo find registered contact
+                        if (_showForMeTaskList) {
+                          registeredContacts
+                              .searchRegisteredContact(task.registeredContact!);
+                        }
                         return Padding(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8.0, vertical: 5.0),
@@ -218,6 +226,10 @@ class _TaskViewState extends State<TaskView> {
                               maxHeight: 100,
                             ),
                             child: ListTile(
+                              onTap: () {
+                                CommonFunctions.showBottomSheet(context,
+                                    child: TaskDetails(task: task));
+                              },
                               tileColor: Theme.of(context).colorScheme.surface,
                               shape: RoundedRectangleBorder(
                                   side: BorderSide(
@@ -231,7 +243,7 @@ class _TaskViewState extends State<TaskView> {
                                   ? ChangeNotifierProvider.value(
                                       value: task.registeredContact,
                                       builder: (context, snapshot) {
-                                        return ByText(task: task);
+                                        return const ByText();
                                       },
                                     )
                                   : null,
@@ -268,18 +280,15 @@ class _TaskViewState extends State<TaskView> {
 }
 
 class ByText extends StatelessWidget {
-  const ByText({
-    Key? key,
-    required this.task,
-  }) : super(key: key);
+  const ByText({Key? key, this.precedingString = 'By'}) : super(key: key);
 
-  final Task task;
+  final String precedingString;
 
   @override
   Widget build(BuildContext context) {
     final registeredContact = Provider.of<RegisteredContact>(context);
     return Text(
-        'By ${registeredContact.fullName ?? registeredContact.phoneNo}');
+        '$precedingString ${registeredContact.fullName ?? registeredContact.phoneNo}');
   }
 }
 
@@ -291,8 +300,22 @@ class AppointmentView extends StatefulWidget {
 }
 
 class _AppointmentViewState extends State<AppointmentView> {
+  bool _getAppointmentForMe = true;
+
+  late User user;
+
+  void _getAppointmentForMeToggle(bool value) {
+    if (value == _getAppointmentForMe) return;
+    setState(() {
+      _getAppointmentForMe = value;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    user = Provider.of<User>(context, listen: false);
+    final registeredContacts =
+        Provider.of<RegisteredContacts>(context, listen: false);
     return Column(
       children: [
         Padding(
@@ -303,21 +326,184 @@ class _AppointmentViewState extends State<AppointmentView> {
                 padding: const EdgeInsets.only(right: 8.0),
                 child: CustomChip(
                   label: const Text('For Me'),
-                  onPressed: () {},
+                  onPressed: () {
+                    _getAppointmentForMeToggle(true);
+                  },
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.only(right: 8.0),
                 child: CustomChip(
                   label: const Text('By Me'),
-                  onPressed: () {},
+                  onPressed: () {
+                    _getAppointmentForMeToggle(false);
+                  },
                 ),
               ),
             ],
           ),
-        )
+        ),
+        Expanded(
+            child: FutureBuilder<LResponse<List<Appointment>?>>(
+          future: AppointmentApiController().retrieveAppointment(user.userId!,
+              getForMeAppointment: _getAppointmentForMe),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+            final lResponse = snapshot.data!;
+
+            if (lResponse.responseStatus == ResponseStatus.failed) {
+              return const Center(
+                child:
+                    Text('Could not retrieve appointments, an error occurred'),
+              );
+            } else if (lResponse.data == null || lResponse.data!.isEmpty) {
+              return Center(
+                child: Text(
+                  'No appointments ' +
+                      (_getAppointmentForMe ? 'for you yet' : 'by you yet'),
+                ),
+              );
+            }
+
+            final appointments = lResponse.data!;
+            return ListView.builder(
+              itemCount: appointments.length,
+              itemBuilder: (context, index) {
+                final appointment = appointments[index];
+                final registeredContact = _getAppointmentForMe
+                    ? RegisteredContact(
+                        phoneNo: appointment.phoneNo, id: appointment.byUserId)
+                    : RegisteredContact(id: appointment.atUserId);
+                registeredContacts.searchRegisteredContact(registeredContact);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 5.0),
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      maxHeight: 100,
+                    ),
+                    child: ListTile(
+                      onTap: () {
+                        //CommonFunctions.showBottomSheet(context, child: );
+                      },
+                      tileColor: Theme.of(context).colorScheme.surface,
+                      shape: RoundedRectangleBorder(
+                          side: BorderSide(
+                              color: context.read<AppTheme>().borderColor),
+                          borderRadius: BorderRadius.circular(18.0)),
+                      title: Text(
+                        CommonFunctions.cutString(
+                            appointment.appointmentString!, 80),
+                      ),
+                      subtitle: ChangeNotifierProvider.value(
+                        value: registeredContact,
+                        builder: (context, snapshot) {
+                          return ByText(
+                            precedingString: _getAppointmentForMe ? 'By' : 'To',
+                          );
+                        },
+                      ),
+                      trailing: Column(
+                        children: [
+                          Text(
+                            CommonFunctions.getddMMyyyy(appointment.date!),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ))
       ],
     );
-    ;
+  }
+}
+
+class TaskDetails extends StatelessWidget {
+  const TaskDetails({Key? key, required this.task}) : super(key: key);
+  final Task task;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = Provider.of<User>(context, listen: false);
+    final successStyle = Theme.of(context)
+        .textTheme
+        .bodyText2!
+        .copyWith(color: context.read<AppTheme>().successColor);
+    const space = SizedBox(
+      height: 8,
+    );
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Task Details'),
+              CustomIconButton(
+                iconData: Icons.close,
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+          Text(task.taskString),
+          space,
+          Row(
+            children: [
+              const Text('Complete By : '),
+              Text(
+                CommonFunctions.getddMMyyyyhmmssa(task.completeBy!),
+                style: successStyle,
+              ),
+            ],
+          ),
+          if (task.urgent) space,
+          Text(
+            task.urgent ? 'URGENT' : '',
+            style: successStyle,
+          ),
+          space,
+          if (task.byUserId == user.userId)
+            Row(
+              children: [
+                const Text('Task Status : '),
+                Text(
+                  task.taskStatus.toString(),
+                  style: successStyle,
+                ),
+              ],
+            ),
+          space,
+          Row(
+            children: [
+              const Text('By : '),
+              if (user.userId != task.byUserId)
+                ChangeNotifierProvider.value(
+                  value: task.registeredContact,
+                  builder: (context, snapshot) {
+                    return const ByText();
+                  },
+                )
+              else
+                Text(
+                  'You',
+                  style: successStyle,
+                )
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
