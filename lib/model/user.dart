@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:virtual_pa/model/appointment_slot.dart';
 
 class User with ChangeNotifier {
   User({
@@ -9,7 +10,7 @@ class User with ChangeNotifier {
     bool isAppointmentEnabled = false,
     bool isTaskLimitReached = false,
     String? password,
-    List? appointmentSlots,
+    List<AppointmentSlot>? appointmentSlots,
     List<String>? blockedList,
   })  : _userId = userId,
         _phoneNo = phoneNo,
@@ -30,7 +31,7 @@ class User with ChangeNotifier {
   int _taskLimit = 500;
   bool _isAppointmentEnabled = false;
   bool _isTaskLimitReached = false;
-  List? _appointmentSlots;
+  List<AppointmentSlot>? _appointmentSlots;
   List<String>? _blockedList;
 
   String? get userId => _userId;
@@ -68,30 +69,54 @@ class User with ChangeNotifier {
     notifyListeners();
   }
 
+  int get taskLimit => _taskLimit;
+  List<AppointmentSlot>? get appointmentSlots => _appointmentSlots;
+  List<String>? get blockedList => _blockedList;
+
   factory User.fromJson(Map<String, dynamic> data) {
+    List<AppointmentSlot> appointmentSlots;
+    if (data['appointmentSlots'] != null) {
+      appointmentSlots = (data['appointmentSlots'].cast<Map<String, dynamic>>()
+              as List<Map<String, dynamic>>)
+          .map<AppointmentSlot>(
+              (slotData) => AppointmentSlot.fromJSON(slotData))
+          .toList();
+    } else {
+      appointmentSlots = [];
+    }
     return User(
-        userId: data['_id'],
-        name: data['name'],
-        phoneNo: data['phoneNo'],
-        blockedList: data['blockedList'].cast<String>(),
-        taskLimit: data['taskLimit'],
-        appointmentSlots: data['appointmentSlots'], // todo: update this
-        isAppointmentEnabled: data['isAppointmentEnabled'],
-        isTaskLimitReached: data['isTaskLimitReached'],
-        password: data['password']);
+      userId: data['_id'],
+      name: data['name'],
+      phoneNo: data['phoneNo'],
+      blockedList:
+          data['blockedList'] == null ? [] : data['blockedList'].cast<String>(),
+      taskLimit: data['taskLimit'],
+      appointmentSlots: appointmentSlots,
+      isAppointmentEnabled: data['isAppointmentEnabled'],
+      isTaskLimitReached: data['isTaskLimitReached'],
+      password: data['password'],
+    );
   }
 
   Map<String, dynamic> toJson() {
+    List<Map<String, dynamic>> appointmentSlot;
+    if (_appointmentSlots != null) {
+      appointmentSlot = _appointmentSlots!
+          .map<Map<String, dynamic>>((slot) => slot.toJSON())
+          .toList();
+    } else {
+      appointmentSlot = [];
+    }
     return {
       '_id': _userId,
       'name': _name,
       'phoneNo': phoneNo,
       'blockedList': _blockedList ?? [],
       'taskLimit': _taskLimit,
-      'appointmentSlots': _appointmentSlots ?? [],
+      'appointmentSlots': appointmentSlot,
       'isAppointmentEnabled': _isAppointmentEnabled,
       'isTaskLimitReached': _isTaskLimitReached,
-      'password': _password ?? '12222',
+      'password': _password ?? '1512',
     };
   }
 
@@ -99,4 +124,8 @@ class User with ChangeNotifier {
   String toString() {
     return 'User{_userId: $_userId, _token: $_token, _phoneNo: $_phoneNo, _name: $_name, _password: $_password, _taskLimit: $_taskLimit, _isAppointmentEnabled: $_isAppointmentEnabled, _isTaskLimitReached: $_isTaskLimitReached, _appointmentSlots: $_appointmentSlots, _blockedList: $_blockedList}';
   }
+
+  bool get isAppointmentEnabled => _isAppointmentEnabled;
+
+  bool get isTaskLimitReached => _isTaskLimitReached;
 }

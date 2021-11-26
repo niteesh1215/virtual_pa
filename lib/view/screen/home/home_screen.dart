@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:virtual_pa/controller/api_end_points/appointment_api_controller.dart';
 import 'package:virtual_pa/controller/api_end_points/task_api_controller.dart';
@@ -12,9 +13,11 @@ import 'package:virtual_pa/model/task.dart';
 import 'package:virtual_pa/model/tasks.dart';
 import 'package:virtual_pa/model/user.dart';
 import 'package:virtual_pa/utilities/common_functions.dart';
+import 'package:virtual_pa/utilities/custom_navigator.dart';
 import 'package:virtual_pa/view/component/buttons/custom_icon_button.dart';
 import 'package:virtual_pa/view/component/custom_chip.dart';
 import 'package:virtual_pa/view/screen/create/create_screen.dart';
+import 'package:virtual_pa/view/screen/preferences/preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String routeName = '/home-screen';
@@ -38,6 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     _user = Provider.of<User>(context, listen: false);
+    final _tasks = Provider.of<Tasks>(context, listen: false);
+    _tasks.userId = _user.userId;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -85,7 +90,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               ListTile(
                 title: const Text('Preferences'),
-                onTap: () {},
+                onTap: () {
+                  CustomNavigator.navigateTo(
+                      context, (context) => const Preferences());
+                },
               )
             ],
           ),
@@ -116,21 +124,12 @@ class TaskView extends StatefulWidget {
 }
 
 class _TaskViewState extends State<TaskView> {
-  bool _showForMeTaskList = true;
   Tasks? tasks;
   late User user;
-  final TaskApiController taskApiController = TaskApiController();
 
   @override
   void initState() {
     super.initState();
-  }
-
-  void _showForMeList(bool value) {
-    if (_showForMeTaskList == value) return;
-    setState(() {
-      _showForMeTaskList = value;
-    });
   }
 
   @override
@@ -141,139 +140,153 @@ class _TaskViewState extends State<TaskView> {
   @override
   Widget build(BuildContext context) {
     user = Provider.of<User>(context, listen: false);
-    tasks = Provider.of<Tasks>(context, listen: false);
+    if (tasks == null) {
+      tasks = Provider.of<Tasks>(context, listen: false);
+      tasks!.userId = user.userId;
+      //tasks!.loadTasks(shouldNotifyListeners: false);
+    }
     final registeredContacts =
         Provider.of<RegisteredContacts>(context, listen: false);
-    print(_showForMeTaskList);
     return Column(
       children: [
         Container(
           color: context.read<AppTheme>().backgroundColor,
           child: Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: CustomChip(
-                    label: const Text('For Me'),
-                    onPressed: () async {
-                      _showForMeList(true);
-                    },
-                    isSelected: _showForMeTaskList,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: CustomChip(
-                    label: const Text('By Me'),
-                    onPressed: () {
-                      _showForMeList(false);
-                    },
-                    isSelected: !_showForMeTaskList,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: CustomChip(
-                    label: const Text('Urgent'),
-                    onPressed: () {},
-                  ),
-                ),
-              ],
+            child: Consumer<Tasks>(
+              builder: (context, tasks, _) {
+                return Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: CustomChip(
+                        label: const Text('For Me'),
+                        onPressed: () async {
+                          tasks.showForMeTask = true;
+                        },
+                        isSelected: tasks.showForMeTask,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: CustomChip(
+                        label: const Text('By Me'),
+                        onPressed: () {
+                          tasks.showForMeTask = false;
+                        },
+                        isSelected: !tasks.showForMeTask,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: CustomChip(
+                        label: const Text('Urgent'),
+                        onPressed: () {
+                          tasks.showOnlyUrgent = !tasks.showOnlyUrgent;
+                        },
+                        isSelected: tasks.showOnlyUrgent,
+                      ),
+                    ),
+                    const Spacer(),
+                    CustomIconButton(
+                      icon: FaIcon(
+                        !tasks.isAscendingOrder
+                            ? FontAwesomeIcons.sortAmountDown
+                            : FontAwesomeIcons.sortAmountUp,
+                      ),
+                      onPressed: () {
+                        tasks.isAscendingOrder = !tasks.isAscendingOrder;
+                      },
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
         Expanded(
-          child: FutureBuilder<LResponse<List<Task>?>>(
-              future: taskApiController.retrieveTask(user.userId!,
-                  getForMeTask: _showForMeTaskList),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-                if (snapshot.data!.data != null &&
-                    snapshot.data!.data!.isNotEmpty) {
-                  tasks!.addTasks(snapshot.data!.data!, shouldNotify: false);
-                  print(snapshot.data!.data!);
-                } else {
-                  return Center(
-                    child: Text(
-                      'No tasks ' +
-                          (_showForMeTaskList ? 'for you yet' : 'by you yet'),
-                    ),
-                  );
-                }
-                return Consumer<Tasks>(
-                  builder: (context, _, __) {
-                    return ListView.builder(
-                      itemCount: tasks!.list.length,
-                      itemBuilder: (context, index) {
-                        final task = tasks!.list[index];
-                        task.registeredContact = RegisteredContact(
-                            phoneNo: task.byUserPhoneNo!, id: task.byUserId);
-                        if (_showForMeTaskList) {
-                          registeredContacts
-                              .searchRegisteredContact(task.registeredContact!);
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0, vertical: 5.0),
-                          child: Container(
-                            constraints: const BoxConstraints(
-                              maxHeight: 100,
-                            ),
-                            child: ListTile(
-                              onTap: () {
-                                CommonFunctions.showBottomSheet(context,
-                                    child: TaskDetails(task: task));
-                              },
-                              tileColor: Theme.of(context).colorScheme.surface,
-                              shape: RoundedRectangleBorder(
-                                  side: BorderSide(
-                                      color:
-                                          context.read<AppTheme>().borderColor),
-                                  borderRadius: BorderRadius.circular(18.0)),
-                              title: Text(
-                                CommonFunctions.cutString(task.taskString, 100),
-                              ),
-                              subtitle: _showForMeTaskList
-                                  ? ChangeNotifierProvider.value(
-                                      value: task.registeredContact,
-                                      builder: (context, snapshot) {
-                                        return const ByText();
-                                      },
-                                    )
-                                  : null,
-                              trailing: Column(
-                                children: [
-                                  Text(
-                                    CommonFunctions.getddMMyyyy(
-                                        task.completeBy!),
+          child: Consumer<Tasks>(
+            builder: (context, tasks, _) {
+              return tasks.isTaskLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : tasks.list.isEmpty
+                      ? Center(
+                          child: Text(tasks.showForMeTask
+                              ? 'No tasks for you yet'
+                              : 'No tasks by you'),
+                        )
+                      : ListView.builder(
+                          itemCount: tasks.list.length,
+                          itemBuilder: (context, index) {
+                            final task = tasks.list[index];
+                            task.registeredContact = RegisteredContact(
+                                phoneNo: task.byUserPhoneNo!,
+                                id: task.byUserId);
+                            if (tasks.showForMeTask) {
+                              registeredContacts.searchRegisteredContact(
+                                  task.registeredContact!);
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0, vertical: 5.0),
+                              child: Container(
+                                constraints: const BoxConstraints(
+                                  maxHeight: 100,
+                                ),
+                                child: ListTile(
+                                  onTap: () {
+                                    CommonFunctions.showBottomSheet(context,
+                                        child: TaskDetails(task: task));
+                                  },
+                                  tileColor:
+                                      Theme.of(context).colorScheme.surface,
+                                  shape: RoundedRectangleBorder(
+                                      side: BorderSide(
+                                          color: context
+                                              .read<AppTheme>()
+                                              .borderColor),
+                                      borderRadius:
+                                          BorderRadius.circular(18.0)),
+                                  title: Text(
+                                    CommonFunctions.cutString(
+                                        task.taskString, 100),
                                   ),
-                                  Text(
-                                    task.urgent ? 'URGENT' : '',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyText2!
-                                        .copyWith(
-                                            color: context
-                                                .read<AppTheme>()
-                                                .successColor),
+                                  subtitle: tasks.showForMeTask
+                                      ? ChangeNotifierProvider.value(
+                                          value: task.registeredContact,
+                                          builder: (context, snapshot) {
+                                            return const ByText();
+                                          },
+                                        )
+                                      : null,
+                                  trailing: Column(
+                                    children: [
+                                      Text(
+                                        CommonFunctions.getddMMyyyy(
+                                            task.completeBy!),
+                                      ),
+                                      Text(
+                                        task.urgent ? 'URGENT' : '',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText2!
+                                            .copyWith(
+                                                color: context
+                                                    .read<AppTheme>()
+                                                    .successColor),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         );
-                      },
-                    );
-                  },
-                );
-              }),
-        )
+            },
+          ),
+        ),
       ],
     );
   }

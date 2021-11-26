@@ -6,19 +6,27 @@ import 'package:virtual_pa/model/app_theme.dart';
 class CustomTextField extends StatelessWidget {
   CustomTextField(
       {Key? key,
+      this.initialValue,
       required this.hintText,
       required this.inputType,
+      this.borderRadius = 18,
+      this.contentPadding = 20,
+      this.textAlign = TextAlign.start,
       ValidationController? validationController,
       this.onSubmitted,
       this.onChange})
       : _validationController = validationController ??
             LengthValidationController(minimumLength: 0),
         super(key: key);
+  final String? initialValue;
   final String hintText;
   final TextInputType inputType;
   final ValidationController? _validationController;
   final void Function(String)? onSubmitted;
   final void Function(String)? onChange;
+  final double borderRadius;
+  final double contentPadding;
+  final TextAlign textAlign;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +42,8 @@ class CustomTextField extends StatelessWidget {
                 : true;
             print(showErrorBorder);
             return TextFormField(
+              initialValue: initialValue,
+              textAlign: textAlign,
               onChanged: (String text) {
                 print(text);
                 validationController.validate(text);
@@ -53,7 +63,7 @@ class CustomTextField extends StatelessWidget {
               keyboardType: inputType,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.all(20),
+                contentPadding: EdgeInsets.all(contentPadding),
                 hintText: hintText,
                 hintStyle: Theme.of(context).textTheme.bodyText1,
                 enabledBorder: border(
@@ -96,6 +106,6 @@ class CustomTextField extends StatelessWidget {
           color: color,
           width: 1,
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(borderRadius),
       );
 }

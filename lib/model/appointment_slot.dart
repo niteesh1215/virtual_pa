@@ -34,4 +34,13 @@ class AppointmentSlot {
   String toString() {
     return 'AppointmentSlot{timing: $timing, maxLimit: $maxLimit, isLimitReached: $isLimitReached}';
   }
+
+  AppointmentSlot copyWith(
+      {String? timing, int? maxLimit, bool? isLimitReached}) {
+    return AppointmentSlot(
+      timing: timing ?? this.timing,
+      maxLimit: maxLimit ?? this.maxLimit,
+      isLimitReached: isLimitReached ?? this.isLimitReached,
+    );
+  }
 }
