@@ -16,6 +16,7 @@ class APIController {
     try {
       await codeToHandle();
     } on DioError catch (e) {
+      print(e.message);
       lResponse.message = getErrorMessage(e.type);
     } catch (e) {
       print(e.toString());

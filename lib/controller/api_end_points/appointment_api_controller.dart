@@ -66,4 +66,48 @@ class AppointmentApiController extends APIController {
         });
     return lResponse;
   }
+
+  Future<LResponse<String?>> deleteAppointment(String appointmentId) async {
+    final LResponse<String?> lResponse = getDefaultLResponse<String?>();
+    await withTryBlock(
+      lResponse: lResponse,
+      codeToHandle: () async {
+        final response = await dio.delete('/delete-appointment', data: {
+          '_id': appointmentId,
+        });
+        if (getStatus(response)) {
+          lResponse.data = 'Deleted successfully';
+          lResponse.responseStatus = ResponseStatus.success;
+          lResponse.message = 'Success';
+        } else {
+          lResponse.responseStatus = ResponseStatus.failed;
+          lResponse.message = response.data.toString();
+        }
+      },
+    );
+    return lResponse;
+  }
+
+  Future<LResponse<String?>> updateAppointmentStatus(
+      String taskId, AppointmentStatus status) async {
+    final LResponse<String?> lResponse = getDefaultLResponse<String?>();
+    await withTryBlock(
+      lResponse: lResponse,
+      codeToHandle: () async {
+        final response = await dio.put('/update-status', data: {
+          '_id': taskId,
+          'status': status.toString(),
+        });
+        if (getStatus(response)) {
+          lResponse.data = 'Updated successfully';
+          lResponse.responseStatus = ResponseStatus.success;
+          lResponse.message = 'Success';
+        } else {
+          lResponse.responseStatus = ResponseStatus.failed;
+          lResponse.message = response.data.toString();
+        }
+      },
+    );
+    return lResponse;
+  }
 }

@@ -18,6 +18,11 @@ class HiveController {
     await _box!.put('user', user.toJson());
   }
 
+  Future<void> deleteUser() async {
+    _checkAndOpenBox();
+    await _box!.delete('user');
+  }
+
   Future<User?> getUser() async {
     _checkAndOpenBox();
     final userMap = _box!.get('user');

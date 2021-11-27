@@ -25,6 +25,8 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
     required this.context,
     required this.textEditingController,
   });
+
+  List<RegisteredContact> selectedContactForTask = [];
   Task? _task;
   Appointment? _appointment;
 
@@ -119,25 +121,34 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
       notifyListeners();
       CommonFunctions.showBottomSheet(context,
           child: ContactPicker(
+            showOnlyAppointmentEnabled:
+                selectedCreateOption == CreateOption.appointmentOptions,
             onClose: () {
-              replaceText(textEditingController.text.replaceAll('@', ''));
-              if (selectedCreateOption == CreateOption.taskOptions) {
-                _task?.atUserId = null;
-              } else if (selectedCreateOption ==
-                  CreateOption.appointmentOptions) {
+              if (selectedCreateOption == CreateOption.appointmentOptions) {
                 _appointment?.atUserId = null;
               }
             },
             onSelected: (RegisteredContact contact) {
+              bool replace = true;
               if (selectedCreateOption == CreateOption.taskOptions) {
                 _task?.atUserId = contact.id;
+                if (!selectedContactForTask.contains(contact)) {
+                  selectedContactForTask.add(contact);
+                } else {
+                  CommonFunctions.showSnackBar(
+                      context, 'Contact already added');
+                  replace = false;
+                }
               } else if (selectedCreateOption ==
                   CreateOption.appointmentOptions) {
                 _appointment?.atUserId = contact.id;
               }
-              replaceText(
-                  textEditingController.text.trim() + contact.fullName! + ' ',
-                  trim: false);
+
+              if (replace) {
+                replaceText(
+                    textEditingController.text.trim() + contact.fullName! + ' ',
+                    trim: false);
+              }
             },
           ),
           isDismissible: false);
@@ -242,16 +253,29 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
     print(_task);
     print(_appointment);
 
+    if (selectedCreateOption == CreateOption.taskOptions) {
+      final registeredContacts = [...selectedContactForTask];
+      for (RegisteredContact rc in registeredContacts) {
+        if (!text.contains('@' + rc.fullName!)) {
+          selectedContactForTask.remove(rc);
+        }
+      }
+    }
+
+    print("*********** selected contact");
+    print(selectedContactForTask);
+    print("*********** selected contact");
+
     for (String keyword in selectedKeywordList) {
       if (text.contains(keyword)) {
-        removeKeyword(keyword);
+        if (keyword != '@' ||
+            selectedCreateOption == CreateOption.appointmentOptions) {
+          removeKeyword(keyword);
+        }
       } else {
         //when keyword is removed from the taskString
         if (selectedCreateOption == CreateOption.taskOptions) {
           switch (keyword) {
-            case '@':
-              _task?.atUserId = null;
-              break;
             case '#completeBy':
               _task?.completeBy = null;
               break;
@@ -286,10 +310,13 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
         : text.lastIndexOf('#');
     if (startIndex >= 0) {
       final String keyword = trimmedText.substring(startIndex);
-      //check if the keyword already exits if yes then don't allow more
-      if (text.indexOf(keyword) != startIndex) {
-        replaceText(text.substring(0, startIndex), trim: false);
-        return;
+      /*check if the keyword already exits if yes then don't allow more except for @ only when selectedCreateOption == CreateOption.appointmentOptions*/
+      if (keyword != '@' ||
+          selectedCreateOption == CreateOption.appointmentOptions) {
+        if (text.indexOf(keyword) != startIndex) {
+          replaceText(text.substring(0, startIndex), trim: false);
+          return;
+        }
       }
       switch (keyword) {
         case '#task':
@@ -330,6 +357,9 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
         if (!text.contains(keyword)) {
           return '$keyword is required';
         }
+      }
+      if (selectedContactForTask.isEmpty) {
+        return 'At least one recipient is required, use @ to add';
       }
     } else if (_selectedCreateOption == CreateOption.appointmentOptions) {
       for (String keyword
@@ -412,15 +442,27 @@ class CreateTaskOrAppointmentController with ChangeNotifier {
 }
 
 class ContactPicker extends StatelessWidget {
-  const ContactPicker(
-      {Key? key, required this.onClose, required this.onSelected})
-      : super(key: key);
+  const ContactPicker({
+    Key? key,
+    required this.onClose,
+    required this.onSelected,
+    this.showOnlyAppointmentEnabled = false,
+  }) : super(key: key);
   final VoidCallback onClose;
   final void Function(RegisteredContact) onSelected;
+  final bool showOnlyAppointmentEnabled;
+
   @override
   Widget build(BuildContext context) {
     final registeredContacts = Provider.of<RegisteredContacts>(context);
-    final contacts = registeredContacts.contacts;
+    late final List<RegisteredContact> contacts;
+    if (showOnlyAppointmentEnabled) {
+      contacts = registeredContacts.contacts
+          .where((rc) => rc.isAppointmentEnabled ?? false)
+          .toList();
+    } else {
+      contacts = registeredContacts.contacts;
+    }
     return Padding(
       padding:
           const EdgeInsets.only(left: 15.0, right: 15.0, top: 5, bottom: 5),
@@ -440,29 +482,34 @@ class ContactPicker extends StatelessWidget {
             ],
           ),
           Expanded(
-              child: ListView.separated(
-            itemCount: contacts.length,
-            itemBuilder: (context, i) {
-              final contact = contacts[i];
-              return ListTile(
-                onTap: () {
-                  onSelected(contact);
-                  Navigator.pop(context);
-                },
-                title: Text(contact.fullName!),
-                subtitle: Text(
-                  contact.phoneNo!,
-                  style: Theme.of(context).textTheme.caption,
-                ),
-              );
-            },
-            separatorBuilder: (context, i) {
-              return const Divider(
-                color: Colors.white12,
-                height: 2.0,
-              );
-            },
-          ))
+              child: contacts.isEmpty
+                  ? const Center(
+                      child:
+                          Text('None of your contacts has enabled appointment'),
+                    )
+                  : ListView.separated(
+                      itemCount: contacts.length,
+                      itemBuilder: (context, i) {
+                        final contact = contacts[i];
+                        return ListTile(
+                          onTap: () {
+                            onSelected(contact);
+                            Navigator.pop(context);
+                          },
+                          title: Text(contact.fullName!),
+                          subtitle: Text(
+                            contact.phoneNo!,
+                            style: Theme.of(context).textTheme.caption,
+                          ),
+                        );
+                      },
+                      separatorBuilder: (context, i) {
+                        return const Divider(
+                          color: Colors.white12,
+                          height: 2.0,
+                        );
+                      },
+                    ))
         ],
       ),
     );

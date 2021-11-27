@@ -3,17 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:virtual_pa/constants.dart';
+import 'package:virtual_pa/controller/api_end_points/user_api_controller.dart';
+import 'package:virtual_pa/controller/firebase_auth_controller.dart';
+import 'package:virtual_pa/controller/hive_controller.dart';
 import 'package:virtual_pa/controller/textfield_validation_controller.dart';
+import 'package:virtual_pa/model/l_response.dart';
 import 'package:virtual_pa/model/user.dart';
 import 'package:virtual_pa/utilities/common_functions.dart';
 import 'package:virtual_pa/utilities/custom_navigator.dart';
 import 'package:virtual_pa/view/component/input_field/custom_password_field.dart';
 import 'package:virtual_pa/view/component/buttons/custom_text_button.dart';
 import 'package:virtual_pa/view/component/input_field/custom_text_field.dart';
+import 'package:virtual_pa/view/screen/authentication_and_registration/otp.dart';
 import 'package:virtual_pa/view/screen/authentication_and_registration/register_screen.dart';
 import 'package:virtual_pa/view/screen/authentication_and_registration/reset_password.dart';
 import 'package:virtual_pa/view/screen/home/home_screen.dart';
 import 'package:country_code_picker/country_code_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({Key? key}) : super(key: key);
@@ -27,29 +33,80 @@ class _SignInScreenState extends State<SignInScreen> {
   String? _countryCode = '+91';
   final _formKey = GlobalKey<FormState>();
   late User _user;
-  void _signIn() {
+  late FirebaseAuthController _firebaseAuthController;
+  bool requestSent = false;
+
+  void _signIn() async {
     if (_formKey.currentState!.validate()) {
       if (_countryCode != null) {
-        _user.phoneNo = _countryCode! + _user.phoneNo!;
+        if (!_user.phoneNo!.contains(_countryCode!)) {
+          _user.phoneNo = _countryCode! + _user.phoneNo!;
+          print(_user.phoneNo);
+        }
       } else {
         CommonFunctions.showSnackBar(context, 'Please select country');
+        return;
       }
-      print(_user.phoneNo);
-      Navigator.push(
-        context,
-        CupertinoPageRoute(
-          builder: (context) => const HomeScreen(),
-        ),
-      );
+
+      await _firebaseAuthController.signOut();
+
+      CommonFunctions.showCircularLoadingIndicatorDialog(context);
+      final userAPIController = UserAPIController();
+      final lResponse =
+          await userAPIController.retrieveUser(phoneNo: _user.phoneNo);
+      if (lResponse.responseStatus == ResponseStatus.success &&
+          lResponse.data != null) {
+        Navigator.pop(context);
+      } else {
+        CommonFunctions.showSnackBar(
+          context,
+          'Phone number is not registered, please register',
+        );
+        Navigator.pop(context);
+        return;
+      }
+
+      _firebaseAuthController.authStateStream.listen((fb.User? user) async {
+        if (user != null && !requestSent) {
+          requestSent = true;
+          CommonFunctions.showCircularLoadingIndicatorDialog(context);
+          await Provider.of<HiveController>(context, listen: false)
+              .addUser(lResponse.data!);
+          _user.copyForm(lResponse.data!);
+          Navigator.of(context);
+          CustomNavigator.navigateTo(context, (context) => const HomeScreen());
+        }
+      });
+
+      _firebaseAuthController.verifyPhoneNumber(context,
+          phoneNumber: _user.phoneNo!, onCodeSent: (verificationId) {
+        CommonFunctions.showBottomSheet(
+          context,
+          child: OTP(
+            onTapResend: () {
+              _firebaseAuthController.verifyPhoneNumber(context,
+                  phoneNumber: _user.phoneNo!);
+            },
+            onSubmitted: (String otp) {
+              _firebaseAuthController.signInWithOtp(context,
+                  verificationId: verificationId, otp: otp);
+            },
+          ),
+        );
+      });
     }
   }
 
-  void _onTapForgotPassword() =>
-      CustomNavigator.navigateTo(context, (context) => const ResetPassword());
+  /*void _onTapForgotPassword() =>
+      CustomNavigator.navigateTo(context, (context) => const ResetPassword());*/
 
   @override
   Widget build(BuildContext context) {
     _user = Provider.of(context, listen: false);
+    _firebaseAuthController = Provider.of<FirebaseAuthController>(
+      context,
+      listen: false,
+    );
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -123,7 +180,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           ),
                         ],
                       ),
-                      CustomPasswordField(
+                      /*CustomPasswordField(
                         isPasswordVisible: isPasswordVisible,
                         onTapEye: () {
                           setState(() {
@@ -131,11 +188,11 @@ class _SignInScreenState extends State<SignInScreen> {
                           });
                         },
                         onChange: (password) => _user.password,
-                      ),
+                      ),*/
                     ],
                   ),
                 ),
-                Align(
+                /*Align(
                   alignment: Alignment.centerRight,
                   child: InkWell(
                     onTap: _onTapForgotPassword,
@@ -146,7 +203,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           style: Theme.of(context).textTheme.bodyText1),
                     ),
                   ),
-                ),
+                ),*/
                 const SizedBox(
                   height: 50.0,
                 ),

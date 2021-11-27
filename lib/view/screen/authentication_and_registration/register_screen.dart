@@ -17,6 +17,7 @@ import 'package:virtual_pa/view/component/buttons/custom_text_button.dart';
 import 'package:virtual_pa/view/component/input_field/custom_text_field.dart';
 import 'package:virtual_pa/view/screen/authentication_and_registration/otp.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:virtual_pa/view/screen/authentication_and_registration/sign_in_screen.dart';
 import 'package:virtual_pa/view/screen/home/home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -47,12 +48,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
           CommonFunctions.showSnackBar(context, 'Please select country');
           return;
         }
+
         await _firebaseAuthController.signOut();
+        CommonFunctions.showCircularLoadingIndicatorDialog(context);
+        final userAPIController = UserAPIController();
+        final lResponse =
+            await userAPIController.retrieveUser(phoneNo: _user.phoneNo);
+        if (lResponse.responseStatus == ResponseStatus.success &&
+            lResponse.data != null) {
+          CommonFunctions.showSnackBar(
+            context,
+            'Phone number is already registered, please login',
+          );
+          Navigator.pop(context);
+          return;
+        } else {
+          Navigator.pop(context);
+        }
+
         _firebaseAuthController.authStateStream.listen((fb.User? user) async {
           if (user != null && !requestSent) {
             requestSent = true;
             CommonFunctions.showCircularLoadingIndicatorDialog(context);
-            final userAPIController = UserAPIController();
+
             final LResponse<User?> response =
                 await userAPIController.addUser(_user);
             print(context.widget.runtimeType);
@@ -186,7 +204,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ],
                       ),
-                      CustomPasswordField(
+                      /*CustomPasswordField(
                         isPasswordVisible: _passwordVisibility,
                         onTapEye: () {
                           setState(() {
@@ -194,7 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           });
                         },
                         onChange: (pass) => _user.password = pass,
-                      ),
+                      ),*/
                     ],
                   ),
                 ),
@@ -211,7 +229,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     GestureDetector(
                       onTap: () => CustomNavigator.navigateTo(
                         context,
-                        (context) => const RegisterScreen(),
+                        (context) => const SignInScreen(),
                       ),
                       child: Text(
                         "Sign In",

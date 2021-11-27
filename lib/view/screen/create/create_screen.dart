@@ -166,18 +166,32 @@ class _CreateScreenState extends State<CreateScreen> {
           CreateOption.taskOptions) {
         final taskApiController = TaskApiController();
         final task = _createTaskOrAppointmentController.task!;
-        task.timeAdded = DateTime.now();
-        task.byUserId = user.userId;
-        task.byUserPhoneNo = user.phoneNo;
-        final LResponse<Task?> lResponse =
-            await taskApiController.addTask(task);
-        if (lResponse.responseStatus == ResponseStatus.success) {
-          print(lResponse.data);
-          CommonFunctions.showSnackBar(context, 'Added new task');
-          _createTaskOrAppointmentController.reset();
-        } else {
-          print(lResponse.data);
-          CommonFunctions.showSnackBar(context, lResponse.message);
+        final taskString = task.taskString;
+        for (RegisteredContact rc
+            in _createTaskOrAppointmentController.selectedContactForTask) {
+          task.taskString = taskString;
+          for (RegisteredContact r
+              in _createTaskOrAppointmentController.selectedContactForTask) {
+            if (rc != r) {
+              task.taskString =
+                  task.taskString.replaceAll('@' + r.fullName!, '');
+            }
+          }
+          task.timeAdded = DateTime.now();
+          task.byUserId = user.userId;
+          task.byUserPhoneNo = user.phoneNo;
+          task.atUserId = rc.id;
+          final LResponse<Task?> lResponse =
+              await taskApiController.addTask(task);
+          if (lResponse.responseStatus == ResponseStatus.success) {
+            print(lResponse.data);
+            CommonFunctions.showSnackBar(
+                context, 'Added new task to ${rc.fullName}');
+            _createTaskOrAppointmentController.reset();
+          } else {
+            print(lResponse.data);
+            CommonFunctions.showSnackBar(context, lResponse.message);
+          }
         }
       } else if (_createTaskOrAppointmentController.selectedCreateOption ==
           CreateOption.appointmentOptions) {

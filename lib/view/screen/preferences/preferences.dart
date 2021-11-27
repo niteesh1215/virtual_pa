@@ -3,9 +3,12 @@ import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:flutter_switch/flutter_switch.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:provider/provider.dart';
+import 'package:virtual_pa/controller/api_end_points/user_api_controller.dart';
+import 'package:virtual_pa/controller/hive_controller.dart';
 import 'package:virtual_pa/controller/textfield_validation_controller.dart';
 import 'package:virtual_pa/model/app_theme.dart';
 import 'package:virtual_pa/model/appointment_slot.dart';
+import 'package:virtual_pa/model/l_response.dart';
 import 'package:virtual_pa/model/preference_data.dart';
 import 'package:virtual_pa/model/user.dart';
 import 'package:virtual_pa/utilities/common_functions.dart';
@@ -50,10 +53,38 @@ class _PreferencesState extends State<Preferences> {
     return false;
   }
 
+  void updatePreferences(BuildContext context) async {
+    final UserAPIController userAPIController = UserAPIController();
+    CommonFunctions.showCircularLoadingIndicatorDialog(context);
+    final LResponse<User?> lResponse =
+        await userAPIController.updatePreferences(
+            userId: user!.userId!, preferencesData: preferencesData);
+    if (lResponse.responseStatus == ResponseStatus.failed ||
+        lResponse.data == null) {
+      Navigator.pop(context);
+      print(lResponse.message);
+      CommonFunctions.showSnackBar(context, 'Failed to update');
+    } else {
+      final lUser = lResponse.data!;
+      user!.isAppointmentEnabled = lUser.isAppointmentEnabled;
+      user!.taskLimit = lUser.taskLimit;
+      user!.appointmentSlots = lUser.appointmentSlots;
+      final HiveController hiveController =
+          Provider.of<HiveController>(context, listen: false);
+      hiveController.addUser(user!);
+      Navigator.pop(context);
+      CommonFunctions.showSnackBar(context, 'Updated Successfully');
+      setState(() {
+        preferencesData.isChanged = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (user == null) {
       user = Provider.of<User>(context);
+      print(user!.userId);
       preferencesData = PreferencesData(
         isAppointmentEnabled: user!.isAppointmentEnabled,
         taskLimit: user!.taskLimit,
@@ -89,6 +120,7 @@ class _PreferencesState extends State<Preferences> {
                         SizedBox(
                           width: 150,
                           child: CustomTextField(
+                            initialValue: preferencesData.taskLimit.toString(),
                             validationController: _customValidationController,
                             hintText: 'Task Limit',
                             inputType: TextInputType.number,
@@ -193,8 +225,8 @@ class _PreferencesState extends State<Preferences> {
             const Spacer(),
             if (preferencesData.isChanged)
               CustomTextButton(
-                buttonName: 'Save Preferences',
-                onTap: () {},
+                buttonName: 'Update Preferences',
+                onTap: () => updatePreferences(context),
                 bgColor: Theme.of(context).colorScheme.primary,
                 textColor: Colors.black,
               )

@@ -76,10 +76,9 @@ class User with ChangeNotifier {
   factory User.fromJson(Map<String, dynamic> data) {
     List<AppointmentSlot> appointmentSlots;
     if (data['appointmentSlots'] != null) {
-      appointmentSlots = (data['appointmentSlots'].cast<Map<String, dynamic>>()
-              as List<Map<String, dynamic>>)
-          .map<AppointmentSlot>(
-              (slotData) => AppointmentSlot.fromJSON(slotData))
+      appointmentSlots = (data['appointmentSlots'] as List)
+          .map<AppointmentSlot>((slotData) =>
+              AppointmentSlot.fromJSON(Map<String, dynamic>.from(slotData)))
           .toList();
     } else {
       appointmentSlots = [];
@@ -120,6 +119,18 @@ class User with ChangeNotifier {
     };
   }
 
+  void copyForm(User user) {
+    _userId = user.userId;
+    _phoneNo = user.phoneNo;
+    _name = user.name;
+    _taskLimit = user.taskLimit;
+    _isAppointmentEnabled = user.isAppointmentEnabled;
+    _isTaskLimitReached = user.isTaskLimitReached;
+    _appointmentSlots = user.appointmentSlots;
+    _blockedList = user.blockedList;
+    _password = user.password;
+  }
+
   @override
   String toString() {
     return 'User{_userId: $_userId, _token: $_token, _phoneNo: $_phoneNo, _name: $_name, _password: $_password, _taskLimit: $_taskLimit, _isAppointmentEnabled: $_isAppointmentEnabled, _isTaskLimitReached: $_isTaskLimitReached, _appointmentSlots: $_appointmentSlots, _blockedList: $_blockedList}';
@@ -128,4 +139,29 @@ class User with ChangeNotifier {
   bool get isAppointmentEnabled => _isAppointmentEnabled;
 
   bool get isTaskLimitReached => _isTaskLimitReached;
+
+  set blockedList(List<String>? value) {
+    _blockedList = value;
+    notifyListeners();
+  }
+
+  set appointmentSlots(List<AppointmentSlot>? value) {
+    _appointmentSlots = value;
+    notifyListeners();
+  }
+
+  set isTaskLimitReached(bool value) {
+    _isTaskLimitReached = value;
+    notifyListeners();
+  }
+
+  set isAppointmentEnabled(bool value) {
+    _isAppointmentEnabled = value;
+    notifyListeners();
+  }
+
+  set taskLimit(int value) {
+    _taskLimit = value;
+    notifyListeners();
+  }
 }

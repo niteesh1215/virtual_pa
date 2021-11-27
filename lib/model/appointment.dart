@@ -1,4 +1,5 @@
 import 'package:jiffy/jiffy.dart';
+import 'package:virtual_pa/model/registered_contact.dart';
 import 'package:virtual_pa/utilities/common_functions.dart';
 
 enum AppointmentStatus { pending, completed, rejected }
@@ -13,6 +14,7 @@ class Appointment with Comparable<Appointment> {
   String? slot;
   DateTime? timeStamp;
   AppointmentStatus status;
+  RegisteredContact? byRegisteredContact;
 
   Appointment({
     this.appointmentId,
@@ -24,6 +26,7 @@ class Appointment with Comparable<Appointment> {
     this.slot,
     this.timeStamp,
     this.status = AppointmentStatus.pending,
+    this.byRegisteredContact,
   });
 
   @override

@@ -73,6 +73,7 @@ class Tasks with ChangeNotifier {
 
   void deleteTask(Task task, {bool shouldNotify = true}) {
     _list.remove(task);
+    if (shouldNotify) notifyListeners();
   }
 
   List<Task> getSortByDateTask({List<Task>? tasks, bool isAsec = true}) {
@@ -91,8 +92,10 @@ class Tasks with ChangeNotifier {
     _showOnlyUrgent = false;
     _list = [];
     if (shouldNotifyListeners) {
+      _isAscendingOrder = true;
       isTaskLoading = true;
     } else {
+      _isAscendingOrder = true;
       _isTaskLoading = true;
     }
     final TaskApiController taskApiController = TaskApiController();

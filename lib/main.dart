@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:virtual_pa/controller/firebase_auth_controller.dart';
 import 'package:virtual_pa/controller/hive_controller.dart';
 import 'package:virtual_pa/model/app_theme.dart';
+import 'package:virtual_pa/model/appointments.dart';
 import 'package:virtual_pa/model/registered_contact.dart';
 import 'package:virtual_pa/model/tasks.dart';
 import 'package:virtual_pa/model/user.dart';
@@ -33,6 +34,7 @@ class _VirtualPAState extends State<VirtualPA> {
   User? user;
   final registeredContacts = RegisteredContacts();
   final tasks = Tasks();
+  final appointments = Appointments();
   final hiveController = HiveController();
 
   Future<void> _initialize() async {
@@ -72,6 +74,7 @@ class _VirtualPAState extends State<VirtualPA> {
               ChangeNotifierProvider.value(value: user),
               ChangeNotifierProvider.value(value: registeredContacts),
               ChangeNotifierProvider.value(value: tasks),
+              ChangeNotifierProvider.value(value: appointments),
               ChangeNotifierProvider.value(value: firebaseAuthController),
               Provider.value(value: hiveController),
             ],
